@@ -1,10 +1,10 @@
 // src/main.rs
 
 use actix_web::{web, App, HttpServer, Responder, HttpResponse};
-mod version; // Import the version module
+mod downloadlink;
 
-async fn get_version() -> impl Responder {
-    match version::get_latest_version().await {
+async fn get_link() -> impl Responder {
+    match downloadlink::get_latest_patch().await {
         Ok(version) => HttpResponse::Ok().json(version),
         Err(_) => HttpResponse::InternalServerError().body("failed to fetch latest version"),
     }
@@ -14,7 +14,7 @@ async fn get_version() -> impl Responder {
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
-            .route("/", web::get().to(get_version)
+            .route("/", web::get().to(get_link)
         )
             
     })
