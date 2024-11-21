@@ -1,7 +1,7 @@
 /*
  * File: champion.rs
  * Copyright: 2024, Alan Fung
- * Description: returns champion.json
+ * Description: returns champion.json as an http response
  */
 use actix_web::{HttpResponse, Responder};
 use reqwest::Client;
