@@ -1,5 +1,5 @@
 #[derive(Debug, Default)]
-struct StatValues {
+pub struct StatValues {
     flat: f32,
     percent: f32,
     per_level: f32,
@@ -9,7 +9,7 @@ struct StatValues {
 }
 
 #[derive(Debug, Default)]
-struct Stats {
+pub struct Stats {
     ability_power: StatValues,
     armor: StatValues,
     armor_penetration: StatValues,
@@ -32,3 +32,5 @@ struct Stats {
     omnivamp: StatValues,
     tenacity: StatValues,
 }
+
+
