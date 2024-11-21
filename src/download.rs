@@ -3,7 +3,6 @@
  * Copyright: 2024, Alan Fung
  * Description: downloads the latest stats from the League of Legends API
  */
-use actix_web::{web, App, HttpServer, Responder, HttpResponse};
 use reqwest::Client;
 use serde::Deserialize;
 use flate2::read::GzDecoder;
@@ -59,7 +58,7 @@ pub async fn check_and_update() -> Result<(), Box<dyn Error>> {
     let file_path = Path::new("dragontail.tgz");
 
     let mut file = File::create(file_path)?;
-    let mut content = response.bytes().await?;
+    let content = response.bytes().await?;
     file.write_all(&content)?;
 
     if Path::new("data").exists() {
