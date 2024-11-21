@@ -1,4 +1,8 @@
-// src/champion.rs
+/*
+ * File: item.rs
+ * Copyright: 2024, Alan Fung
+ * Description: returns item.json
+ */
 use actix_web::{HttpResponse, Responder};
 use std::fs;
 use std::path::Path;

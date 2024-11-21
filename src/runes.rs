@@ -1,4 +1,8 @@
-// src/champion.rs
+/*
+ * File: runes.rs
+ * Copyright: 2024, Alan Fung
+ * Description: returns runesReforged.json
+ */
 use actix_web::{HttpResponse, Responder};
 use std::fs;
 use std::path::Path;
