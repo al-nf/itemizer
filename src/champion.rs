@@ -51,4 +51,3 @@ pub async fn fetch_champs() -> impl Responder {
         }
     }
 }
-
