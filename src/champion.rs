@@ -1,34 +1,34 @@
 /*
- * File: champion.rs
+ * File: item.rs
  * Copyright: 2024, Alan Fung
- * Description: returns champion.json
+ * Description: returns item.json
  */
-use actix_web::{HttpResponse, Responder};
-use std::fs;
-use std::path::Path;
-use serde_json::Value;
-use crate::download::get_latest_version;
+use actix_web::{web, App, HttpServer, HttpResponse, Responder};
+use reqwest::Client;
 
-pub async fn get_champion_json() -> impl Responder {
-    match get_latest_version().await {
-        Ok(latest_version) => {
-            let file_path = format!("data/{}/data/en_US/champion.json", latest_version);
-            
-            if !Path::new(&file_path).exists() {
-                return HttpResponse::NotFound().body(format!("File not found: {}", file_path));
-            }
+pub async fn fetch_champs() -> impl Responder {
+    let url = "http://cdn.merakianalytics.com/riot/lol/resources/latest/en-US/champions.json";
+    
+    // Create a new reqwest client
+    let client = Client::new();
 
-            match fs::read_to_string(file_path) {
-                Ok(contents) => {
-                    match serde_json::from_str::<Value>(&contents) {
-                        Ok(json) => HttpResponse::Ok().json(json), // Respond with the parsed JSON
-                        Err(_) => HttpResponse::InternalServerError().body("Failed to parse JSON"),
-                    }
-                }
-                Err(_) => HttpResponse::InternalServerError().body("Failed to read file"),
+    // Send the GET request
+    let response = client.get(url).send().await;
+
+    match response {
+        Ok(resp) => {
+            if resp.status().is_success() {
+                // Return the response body as the content directly
+                let body = resp.text().await.unwrap_or_else(|_| String::from("Failed to read body"));
+                HttpResponse::Ok().body(body)
+            } else {
+                // Handle failed HTTP request
+                HttpResponse::InternalServerError().body("Failed to fetch data")
             }
         }
-        Err(_) => HttpResponse::InternalServerError().body("Failed to get latest patch version"),
+        Err(_) => {
+            // Handle network error
+            HttpResponse::InternalServerError().body("Network error while fetching data")
+        }
     }
 }
-

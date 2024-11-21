@@ -27,10 +27,8 @@ pub async fn download_handler() -> impl Responder {
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
-            .route("/download", web::get().to(download_handler)) 
-            .route("/champion", web::get().to(champion::get_champion_json))
-            .route("/item", web::get().to(item::get_item_json))
-            .route("/runes", web::get().to(runes::get_runes_json))
+            .route("/champion", web::get().to(champion::fetch_champs))
+            .route("/item", web::get().to(item::fetch_items))
             .route("/", web::get().to(construction))
     })
     .bind("127.0.0.1:8080")?  
