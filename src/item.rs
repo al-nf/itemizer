@@ -3,10 +3,10 @@
  * Copyright: 2024, Alan Fung
  * Description: returns item.json
  */
-use actix_web::{web, App, HttpServer, HttpResponse, Responder};
+use actix_web::{HttpResponse, Responder};
 use reqwest::Client;
 use std::fs::{self, File};
-use std::io::{self, Write};
+use std::io::{Write};
 use std::path::Path;
 
 pub async fn fetch_items() -> impl Responder {
