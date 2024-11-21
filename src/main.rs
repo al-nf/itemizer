@@ -4,23 +4,11 @@
  * Description: starts an app 
  */
 use actix_web::{web, App, HttpServer, Responder, HttpResponse};
-mod download;
 mod champion;
 mod item;
-mod runes;
 
 async fn construction() -> impl Responder {
     HttpResponse::Ok().body("||| SITE UNDER CONSTRUCTION |||")
-}
-
-pub async fn download_handler() -> impl Responder {
-    match download::check_and_update().await {
-        Ok(_) => HttpResponse::Ok().body("Update completed successfully."),
-        Err(err) => {
-            eprintln!("Error during update: {}", err);
-            HttpResponse::InternalServerError().body("Failed to update.")
-        }
-    }
 }
 
 #[actix_web::main]
