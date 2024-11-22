@@ -10,17 +10,14 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
-// URL to fetch champion data
 const CHAMPIONS_URL: &str = "https://cdn.merakianalytics.com/riot/lol/resources/latest/en-US/champions.json";
 const CACHE_PATH: &str = "champs_cache.json";
 
-// Ensure the cache file exists
 pub async fn ensure_cache() -> Result<(), String> {
     if Path::new(CACHE_PATH).exists() {
-        return Ok(()); // Cache already exists
+        return Ok(()); 
     }
 
-    // Fetch data and create the cache file
     let client = Client::new();
     let response = client.get(CHAMPIONS_URL).send().await.map_err(|_| "Failed to fetch data")?;
 
@@ -34,7 +31,6 @@ pub async fn ensure_cache() -> Result<(), String> {
     }
 }
 
-// Fetch champions manually (used in /fetch-champs route)
 pub async fn fetch_champs() -> impl Responder {
     match ensure_cache().await {
         Ok(_) => HttpResponse::Ok().body("Cache successfully created or already exists"),
@@ -42,26 +38,21 @@ pub async fn fetch_champs() -> impl Responder {
     }
 }
 
-// Get a champion by name
 pub async fn get_champion(name: web::Path<String>) -> impl Responder {
-    // Ensure the cache exists (in case it was deleted during runtime)
     if let Err(err) = ensure_cache().await {
         return HttpResponse::InternalServerError().body(err);
     }
 
-    // Read the JSON file
     let data = match fs::read_to_string(CACHE_PATH) {
         Ok(content) => content,
         Err(_) => return HttpResponse::InternalServerError().body("Failed to read cache file"),
     };
 
-    // Parse the JSON content
     let champs: Value = match serde_json::from_str(&data) {
         Ok(parsed) => parsed,
         Err(_) => return HttpResponse::InternalServerError().body("Failed to parse JSON file"),
     };
 
-    // Search for the champion
     if let Some(champion) = champs.get(&name.into_inner()) {
         HttpResponse::Ok().json(champion)
     } else {
@@ -69,3 +60,34 @@ pub async fn get_champion(name: web::Path<String>) -> impl Responder {
     }
 }
 
+pub async fn get_champion_property_nested(path: web::Path<(String, String)>) -> impl Responder {
+    let cache_path = "champs_cache.json";
+
+    let data = match fs::read_to_string(cache_path) {
+        Ok(content) => content,
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to read cache file"),
+    };
+
+    let champs: Value = match serde_json::from_str(&data) {
+        Ok(parsed) => parsed,
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to parse JSON file"),
+    };
+
+    let (champion_name, property) = path.into_inner();
+    if let Some(champion) = champs.get(&champion_name) {
+        let keys: Vec<&str> = property.split('.').collect();
+        let mut current_value = champion;
+
+        for key in keys {
+            if let Some(value) = current_value.get(key) {
+                current_value = value;
+            } else {
+                return HttpResponse::NotFound().body(format!("Property '{}' not found", property));
+            }
+        }
+
+        return HttpResponse::Ok().json(current_value);
+    }
+
+    HttpResponse::NotFound().body("Champion not found")
+}
