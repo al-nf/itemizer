@@ -36,10 +36,12 @@ async fn get_champion_by_name(champion_name: web::Path<String>) -> impl Responde
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    champion::ensure_cache().await.expect("Failed to ensure champion cache");
     HttpServer::new(|| {
         App::new()
             .route("/champion", web::get().to(champion::fetch_champs))
-            //.route("/champion/{champion-name}", web::get().to(get_champion_by_name))
+            .route("/champion/{name}", web::get().to(champion::get_champion))
+            .route("/fetch-champs", web::get().to(champion::fetch_champs))
             .route("/item", web::get().to(item::fetch_items))
             .route("/", web::get().to(construction))
     })
