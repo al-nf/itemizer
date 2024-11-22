@@ -32,9 +32,15 @@ pub async fn ensure_cache() -> Result<(), String> {
 }
 
 pub async fn fetch_items() -> impl Responder {
-    match ensure_cache().await {
-        Ok(_) => HttpResponse::Ok().body("Cache successfully created or already exists"),
-        Err(err) => HttpResponse::InternalServerError().body(err),
+    if let Err(err) = ensure_cache().await {
+        return HttpResponse::InternalServerError().body(err);
+    }
+
+    match fs::read_to_string(CACHE_PATH) {
+        Ok(content) => HttpResponse::Ok()
+            .content_type("application/json") 
+            .body(content),
+        Err(_) => HttpResponse::InternalServerError().body("Failed to read cache file"),
     }
 }
 
@@ -53,10 +59,16 @@ pub async fn get_item(name: web::Path<String>) -> impl Responder {
         Err(_) => return HttpResponse::InternalServerError().body("Failed to parse JSON file"),
     };
 
-    if let Some(item) = items.get(&name.into_inner()) {
-        HttpResponse::Ok().json(item)
-    } else {
-        HttpResponse::NotFound().body("Item not found")
+    if let Some(items_map) = items.as_object() {
+        for (_id, item) in items_map {
+            if let Some(item_name) = item.get("name").and_then(|n| n.as_str()) {
+                if item_name.eq_ignore_ascii_case(&name) {
+                    return HttpResponse::Ok().json(item);
+                }
+            }
+        }
     }
+
+    HttpResponse::NotFound().body("Item not found")
 }
 

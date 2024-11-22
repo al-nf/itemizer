@@ -20,7 +20,6 @@ async fn main() -> std::io::Result<()> {
             .route("/champion/{name}", web::get().to(champion::get_champion))
             .route("/champion/{name}/{property:.*}", web::get().to(champion::get_champion_property_nested))
             .route("item/{name}", web::get().to(item::get_item))
-            .route("/fetch-champs", web::get().to(champion::fetch_champs))
             .route("/item", web::get().to(item::fetch_items))
             .route("/", web::get().to(construction))
     })

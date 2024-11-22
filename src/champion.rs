@@ -32,11 +32,20 @@ pub async fn ensure_cache() -> Result<(), String> {
 }
 
 pub async fn fetch_champs() -> impl Responder {
-    match ensure_cache().await {
-        Ok(_) => HttpResponse::Ok().body("Cache successfully created or already exists"),
-        Err(err) => HttpResponse::InternalServerError().body(err),
+    // Ensure the cache is created
+    if let Err(err) = ensure_cache().await {
+        return HttpResponse::InternalServerError().body(err);
+    }
+
+    // Read the cache file
+    match fs::read_to_string(CACHE_PATH) {
+        Ok(content) => HttpResponse::Ok()
+            .content_type("application/json") // Explicitly set the content type
+            .body(content),
+        Err(_) => HttpResponse::InternalServerError().body("Failed to read cache file"),
     }
 }
+
 
 pub async fn get_champion(name: web::Path<String>) -> impl Responder {
     if let Err(err) = ensure_cache().await {
