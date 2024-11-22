@@ -15,7 +15,8 @@ async fn construction() -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     champion::ensure_cache().await.expect("Failed to ensure champion cache");
-    let stats = Stats::new();
+    let mut stats = Stats::new();
+
     HttpServer::new(|| {
         App::new()
             .route("/champion", web::get().to(champion::fetch_champs))
