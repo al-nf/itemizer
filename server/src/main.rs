@@ -6,6 +6,7 @@
 use actix_web::{web, App, HttpServer, Responder, HttpResponse};
 mod champion;
 mod item;
+mod stats;
 
 async fn construction() -> impl Responder {
     HttpResponse::Ok().body("||| UNDER CONSTRUCTION |||")
@@ -14,6 +15,7 @@ async fn construction() -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     champion::ensure_cache().await.expect("Failed to ensure champion cache");
+    let stats = Stats::new();
     HttpServer::new(|| {
         App::new()
             .route("/champion", web::get().to(champion::fetch_champs))
@@ -22,6 +24,7 @@ async fn main() -> std::io::Result<()> {
             .route("item/{name}", web::get().to(item::get_item))
             .route("/item", web::get().to(item::fetch_items))
             .route("/", web::get().to(construction))
+            .route("/stats", web::get().to(stats
     })
     .bind("127.0.0.1:8080")?  
     .run()
