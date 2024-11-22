@@ -36,45 +36,8 @@ pub struct Stats {
 }
 
 impl Stat {
-    pub fn new() -> Self {
-        Stat {
-            flat: 0.0,
-            percent: 0.0,
-            per_level: 0.0,
-            percent_base: 0.0,
-            percent_bonus: 0.0,
-        }
-    }
 }
 
 impl Stats {
-    pub fn new() -> Self {
-        Stats {
-            ability_power: Stat::new(),
-            armor: Stat::new(),
-            armor_penetration: Stat::new(),
-            attack_damage: Stat::new(),
-            attack_speed: Stat::new(),
-            cooldown_reduction: Stat::new(),
-            critical_strike_chance: Stat::new(),
-            gold_per_10: Stat::new(),
-            heal_and_shield_power: Stat::new(),
-            health: Stat::new(),
-            health_regen: Stat::new(),
-            lethality: Stat::new(),
-            lifesteal: Stat::new(),
-            magic_penetration: Stat::new(),
-            magic_resistance: Stat::new(),
-            mana: Stat::new(),
-            mana_regen: Stat::new(),
-            movespeed: Stat::new(),
-            ability_haste: Stat::new(),
-            omnivamp: Stat::new(),
-            tenacity: Stat::new(),
-        }
-    }
-    pub async fn create_stats -> Stats {
-        Stats::new()
-    }
 }
 

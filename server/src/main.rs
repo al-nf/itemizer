@@ -24,7 +24,6 @@ async fn main() -> std::io::Result<()> {
             .route("item/{name}", web::get().to(item::get_item))
             .route("/item", web::get().to(item::fetch_items))
             .route("/", web::get().to(construction))
-            .route("/stats", web::get().to(stats
     })
     .bind("127.0.0.1:8080")?  
     .run()
