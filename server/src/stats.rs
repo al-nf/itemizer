@@ -1,7 +1,7 @@
-// src/models/stats.rs
+// src/stats.rs
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Stat {
     pub flat: f64,
     pub percent: f64,
@@ -10,7 +10,7 @@ pub struct Stat {
     pub percent_bonus: f64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Stats {
     pub ability_power: Stat,
     pub armor: Stat,
@@ -73,8 +73,10 @@ impl Stats {
             tenacity: Stat::new(),
         }
     }
+    pub fn get_stats(&self) -> Stats {
+        self.clone() // Clone the stats to avoid borrowing issues in a web context
+    }
 
-    // Non-async version of create_stats
     pub fn create_stats() -> Stats {
         Stats::new()
     }
