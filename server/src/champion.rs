@@ -99,12 +99,22 @@ pub async fn get_champion_property_nested(path: web::Path<(String, String)>) -> 
 }
 
 pub async fn set_champion(
-    stats: web::Data<Mutex<Stats>>,  
-    champion_name: web::Path<String>,  
+    stats: web::Data<Mutex<Stats>>, 
+    champion_name: web::Path<String>,
 ) -> impl Responder {
     let champion_name = champion_name.into_inner();
-    let cache_path = "champs_cache.json";
+    
+    // Log the current stats before the update
+    println!("Before update: {:?}", *stats.lock().unwrap());
 
+    // Lock the Mutex
+    let mut stats = match stats.lock() {
+        Ok(locked_stats) => locked_stats,
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to lock stats"),
+    };
+
+    // Update the stats
+    let cache_path = "champs_cache.json";
     let data = match fs::read_to_string(cache_path) {
         Ok(content) => content,
         Err(_) => return HttpResponse::InternalServerError().body("Failed to read cache file"),
@@ -117,14 +127,13 @@ pub async fn set_champion(
 
     if let Some(champion) = champs.get(&champion_name) {
         if let Some(base_stats) = champion.get("stats") {
-            let mut stats = stats.lock().unwrap();
             match map_base_stats(&mut stats, base_stats) {
                 Ok(()) => {
+                    // Log the stats after the update
+                    println!("After update: {:?}", *stats);
                     HttpResponse::Ok().body(format!("Champion {} stats updated successfully!", champion_name))
-                }
-                Err(err) => {
-                    HttpResponse::InternalServerError().body(format!("Failed to map base stats: {}", err))
-                }
+                },
+                Err(err) => HttpResponse::InternalServerError().body(format!("Failed to map base stats: {}", err)),
             }
         } else {
             HttpResponse::NotFound().body("Champion base stats not found")
@@ -134,12 +143,18 @@ pub async fn set_champion(
     }
 }
 
+
 fn map_base_stats(stats: &mut Stats, base_stats: &Value) -> Result<(), String> {
     let update_stat = |stat: &mut Stat, key: &str| {
-        if let Some(value) = base_stats.get(key) {
-            stat.flat = value.as_f64().unwrap_or(0.0); 
+        if let Some(stat_data) = base_stats.get(key) {
+            stat.flat = stat_data.get("flat").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            stat.percent = stat_data.get("percent").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            stat.per_level = stat_data.get("perLevel").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            stat.percent_base = stat_data.get("percentBase").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            stat.percent_bonus = stat_data.get("percentBonus").and_then(|v| v.as_f64()).unwrap_or(0.0);
         }
     };
+
 
     update_stat(&mut stats.armor, "armor");
     update_stat(&mut stats.attack_damage, "attackDamage");
