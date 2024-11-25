@@ -1,16 +1,13 @@
 // src/main.rs
 use actix_web::{web, App, HttpServer, Responder, HttpResponse};
+use actix_cors::Cors;
+use actix_web::http::header;
 use std::sync::Mutex;
 mod champion;
 mod item;
 mod stats;
 
 use crate::stats::Stats;
-
-
-async fn construction() -> impl Responder {
-    HttpResponse::Ok().body("||| UNDER CONSTRUCTION |||")
-}
 
 async fn get_stats_handler(stats: web::Data<Mutex<Stats>>) -> impl Responder {
     match stats.lock() {
@@ -37,7 +34,16 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(stats.clone())
-            .route("/", web::get().to(construction))
+            .wrap(
+                Cors::default()
+                    .allowed_origin("http://localhost:5173")
+                    .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"]) 
+                    .allowed_headers(vec![
+                        header::CONTENT_TYPE,
+                        header::ACCEPT,
+                    ])
+                    .max_age(3600),
+            )
             .route("/champion", web::get().to(champion::fetch_champs))
             .route("/champion/{name}", web::get().to(champion::get_champion))
             .route("/champion/{name}/{property:.*}", web::get().to(champion::get_champion_property_nested))
@@ -46,8 +52,7 @@ async fn main() -> std::io::Result<()> {
             .route("/item/{name}", web::get().to(item::get_item))
             .route("/stats", web::get().to(get_stats_handler))
     })
-    .bind("127.0.0.1:8080")?  
+    .bind("127.0.0.1:8080")?
     .run()
     .await
 }
-

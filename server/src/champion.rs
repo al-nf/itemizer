@@ -103,17 +103,12 @@ pub async fn set_champion(
     champion_name: web::Path<String>,
 ) -> impl Responder {
     let champion_name = champion_name.into_inner();
-    
-    // Log the current stats before the update
-    println!("Before update: {:?}", *stats.lock().unwrap());
 
-    // Lock the Mutex
     let mut stats = match stats.lock() {
         Ok(locked_stats) => locked_stats,
         Err(_) => return HttpResponse::InternalServerError().body("Failed to lock stats"),
     };
 
-    // Update the stats
     let cache_path = "champs_cache.json";
     let data = match fs::read_to_string(cache_path) {
         Ok(content) => content,
@@ -129,8 +124,6 @@ pub async fn set_champion(
         if let Some(base_stats) = champion.get("stats") {
             match map_base_stats(&mut stats, base_stats) {
                 Ok(()) => {
-                    // Log the stats after the update
-                    println!("After update: {:?}", *stats);
                     HttpResponse::Ok().body(format!("Champion {} stats updated successfully!", champion_name))
                 },
                 Err(err) => HttpResponse::InternalServerError().body(format!("Failed to map base stats: {}", err)),
