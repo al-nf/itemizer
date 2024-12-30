@@ -1,4 +1,4 @@
-target
-src/data
-src/dragontail.tgz
+server/target
+server/src/data
+server/src/dragontail.tgz
 

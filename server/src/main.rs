@@ -21,8 +21,7 @@ pub async fn set_champion_handler(
     champion_name: web::Path<String>,
 ) -> impl Responder {
     let stats_clone = stats.clone();
-    let response = champion::set_champion(stats_clone, champion_name).await;
-    response
+    champion::set_champion(stats_clone, champion_name).await
 }
 
 
