@@ -35,6 +35,11 @@ pub struct Stats {
     pub tenacity: Stat,
 }
 
+impl Default for Stat {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl Stat {
     pub fn new() -> Self {
         Stat {
@@ -47,6 +52,21 @@ impl Stat {
     }
 }
 
+pub fn add(stat1: &Stat, stat2: &Stat) -> Stat {
+    Stat {
+        flat: stat1.flat + stat2.flat,
+        percent: stat1.percent + stat2.percent,
+        per_level: stat1.per_level + stat2.per_level,
+        percent_base: stat1.percent_base + stat2.percent_base,
+        percent_bonus: stat1.percent_bonus + stat2.percent_bonus,
+    }
+}
+
+impl Default for Stats {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl Stats {
     pub fn new() -> Self {
         Stats {
@@ -74,11 +94,39 @@ impl Stats {
         }
     }
     pub fn get_stats(&self) -> Stats {
-        self.clone() // Clone the stats to avoid borrowing issues in a web context
+        self.clone() 
     }
 
     pub fn create_stats() -> Stats {
         Stats::new()
     }
+
+    pub fn add_stats(stats1: &Stats, stats2: &Stats) -> Stats {
+        let mut merged = Stats::new();
+        
+        merged.ability_power = add(&stats1.ability_power, &stats2.ability_power);
+        merged.armor = add(&stats1.armor, &stats2.armor);
+        merged.armor_penetration = add(&stats1.armor_penetration, &stats2.armor_penetration);
+        merged.attack_damage = add(&stats1.attack_damage, &stats2.attack_damage);
+        merged.attack_speed = add(&stats1.attack_speed, &stats2.attack_speed);
+        merged.cooldown_reduction = add(&stats1.cooldown_reduction, &stats2.cooldown_reduction);
+        merged.critical_strike_chance = add(&stats1.critical_strike_chance, &stats2.critical_strike_chance);
+        merged.gold_per_10 = add(&stats1.gold_per_10, &stats2.gold_per_10);
+        merged.heal_and_shield_power = add(&stats1.heal_and_shield_power, &stats2.heal_and_shield_power);
+        merged.health = add(&stats1.health, &stats2.health);
+        merged.health_regen = add(&stats1.health_regen, &stats2.health_regen);
+        merged.lethality = add(&stats1.lethality, &stats2.lethality);
+        merged.lifesteal = add(&stats1.lifesteal, &stats2.lifesteal);
+        merged.magic_penetration = add(&stats1.magic_penetration, &stats2.magic_penetration);
+        merged.mana = add(&stats1.mana, &stats2.mana);
+        merged.mana_regen = add(&stats1.mana_regen, &stats2.mana_regen);
+        merged.movespeed = add(&stats1.movespeed, &stats2.movespeed);
+        merged.ability_haste = add(&stats1.ability_haste, &stats2.ability_haste);
+        merged.omnivamp = add(&stats1.omnivamp, &stats2.omnivamp);
+        merged.tenacity = add(&stats1.tenacity, &stats2.tenacity);
+
+        merged
+    }
+
 }
 

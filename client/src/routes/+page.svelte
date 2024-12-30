@@ -1,201 +1,182 @@
 <script lang="ts">
+    import { onMount } from 'svelte';
+    import { goto } from '$app/navigation';
+
+    let champions: string[] = [];
+    let filteredChampions: string[] = [];
     let championName = "";
-    let championData: any = null;
-    let abilities: any[] = [];
     let error: string | null = null;
+    let showDropdown = false;
+
+    onMount(async () => {
+        try {
+            const response = await fetch('http://localhost:8080/champion');
+            if (!response.ok) throw new Error('Failed to fetch champions');
+            const data = await response.json();
+            // Get the champion names from the first keys of the object
+            champions = Object.keys(data);
+            filterChampions();
+        } catch (err) {
+            console.error(err);
+            error = 'Failed to fetch champions';
+        }
+    });
+
+    function filterChampions() {
+        if (!championName.trim()) {
+            filteredChampions = champions;
+        } else {
+            filteredChampions = champions.filter(champion =>
+                champion.toLowerCase().includes(championName.toLowerCase())
+            );
+        }
+    }
+
+    function handleInput() {
+        filterChampions();
+        showDropdown = true;
+    }
+
+    function selectChampion(champion: string) {
+        championName = champion;
+        localStorage.setItem('currentChampion', champion);
+        showDropdown = false;
+    }
 
     async function submitChampion() {
-        const postResponse = await fetch(`http://localhost:8080/setchampion/${championName}`, { 
-            method: "POST" 
-        });
-
-        if (!postResponse.ok) {
-            error = "Failed to set champion data";
-            championData = null;
-            abilities = [];
-            return;
-        }
-
+        if (!championName) return;
+        
         try {
-            const nameResponse = await fetch(`http://localhost:8080/champion/${championName}/name`);
-            const titleResponse = await fetch(`http://localhost:8080/champion/${championName}/title`);
-            const iconResponse = await fetch(`http://localhost:8080/champion/${championName}/icon`);
-            const abilitiesResponse = await fetch(`http://localhost:8080/champion/${championName}/abilities`);
+            const response = await fetch(`http://localhost:8080/setchampion/${championName}`, { 
+                method: "POST" 
+            });
 
-            if (!nameResponse.ok || !titleResponse.ok || !iconResponse.ok || !abilitiesResponse.ok) {
-                throw new Error("Failed to fetch champion data");
+            if (!response.ok) {
+                throw new Error("Failed to set champion");
             }
 
-            const nameData = await nameResponse.json();
-            const title = await titleResponse.json();
-            const iconData = await iconResponse.json(); 
-            const abilitiesData = await abilitiesResponse.json();
-
-            abilities = [
-                abilitiesData.P?.[0],
-                abilitiesData.Q?.[0],
-                abilitiesData.W?.[0],
-                abilitiesData.E?.[0],
-                abilitiesData.R?.[0]  
-            ].filter(Boolean); 
-
-            championData = {
-                name: nameData,
-                title: title,
-                icon: iconData, 
-            };
-
-            error = null;
+            // If successful, redirect to calculator page
+            goto('/calc');
         } catch (err) {
-            error = "Champion not found or error occurred";
-            championData = null;
-            abilities = [];
-            console.error(err); 
+            error = "Failed to set champion";
+            console.error(err);
         }
     }
 </script>
 
-<!-- Input form -->
-<input type="text" bind:value={championName} placeholder="Enter Champion Name" />
-<button on:click={submitChampion}>Get Champion Data</button>
-
-<!-- Error handling -->
-{#if error}
-    <p>{error}</p>
-{:else if championData}
-    <!-- Champion Info -->
-    <div class="champion-box">
-        <img src={championData.icon} alt="{championData.name} Icon" class="champion-icon" />
-        <div class="champion-info">
-            <h3>{championData.name}</h3>
-            <h4>{championData.title}</h4>
-        </div>
-    </div>
-
-    <!-- Abilities Section -->
-    <div class="abilities">
-        {#each abilities as ability, index}
-            <div class="ability-box">
-                <div class="ability-header">
-                    <!-- Display the ability icon next to the ability name -->
-                    {#if ability?.icon}
-                        <img src={ability.icon.replace(/"/g, '')} alt="Ability Icon" class="ability-icon-img" />
-                    {/if}
-                    <h5><strong>{index === 0 ? `Passive: ${ability?.name}` : `${['Q', 'W', 'E', 'R'][index - 1]}: ${ability?.name}`}</strong></h5>
-                </div>
-
-                <!-- Effects Section: Display the descriptions from the effects array -->
-                <div class="ability-effects">
-                    {#each ability?.effects as effect, effectIndex}
-                        <p>{effect.description}</p>
+<div class="container">
+    <h1>Champion Select</h1>
+    
+    <div class="select-container">
+        <div class="input-wrapper">
+            <input 
+                type="text"
+                bind:value={championName}
+                on:input={handleInput}
+                on:focus={() => showDropdown = true}
+                placeholder="Type champion name..."
+                class="champion-input"
+            />
+            
+            {#if showDropdown && filteredChampions.length > 0}
+                <div class="dropdown">
+                    {#each filteredChampions as champion}
+                        <button 
+                            class="dropdown-item"
+                            on:click={() => selectChampion(champion)}
+                        >
+                            {champion}
+                        </button>
                     {/each}
                 </div>
+            {/if}
+        </div>
 
-                <ul>
-                    <li><strong>Cooldown:</strong> {ability?.cooldown ? ability.cooldown.modifiers[0]?.values.join(" / ") : "N/A"}</li>
-
-                    <!-- Damage Section -->
-                    <!-- TODO: ADD ATTRIBUTE NAMES -->
-                    <li><strong>Damage:</strong>
-                        {#if ability?.effects}
-                            {#each ability.effects as effect}
-                                {#if effect.leveling}
-                                    <span>
-                                        {#each effect.leveling as level, levelIndex}
-                                            {#if level.modifiers && level.modifiers[0]?.values}
-                                                {#each level.modifiers[0]?.values as value, idx}
-                                                    {value}{level.modifiers[0]?.units[idx]}
-                                                    {#if idx < level.modifiers[0]?.values.length - 1}{"/ "}{/if}
-                                                {/each}
-                                            {/if}
-                                            {#if levelIndex < effect.leveling.length - 1}{"  ||  "}{/if}
-                                        {/each}
-                                    </span>
-                                {/if}
-                            {/each}
-                        {/if}
-                    </li>
-
-                    <li><strong>Cost:</strong> {ability?.cost ? ability.cost.modifiers[0]?.values.join(" / ") : "N/A"}</li>
-                </ul>
-            </div>
-        {/each}
+        <button 
+            on:click={submitChampion}
+            disabled={!championName}
+            class="submit-button"
+        >
+            Continue to Calculator
+        </button>
     </div>
-{/if}
 
-<!-- Styling -->
+    {#if error}
+        <p class="error">{error}</p>
+    {/if}
+</div>
+
 <style>
-    .champion-box {
-        display: flex;
-        align-items: center;
-        background-color: #f3f3f3;
-        padding: 10px;
-        border-radius: 8px;
-        margin-top: 10px;
-        max-width: 400px;
+    .container {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 1rem;
     }
 
-    .champion-icon {
-        width: 50px;
-        height: 50px;
-        margin-right: 15px;
+    .select-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin: 2rem 0;
+    }
+
+    .input-wrapper {
+        position: relative;
+    }
+
+    .champion-input {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 1.1rem;
+        border: 1px solid #ccc;
         border-radius: 4px;
     }
 
-    .champion-info h3 {
-        margin: 0;
-        font-size: 1.2em;
+    .dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        max-height: 300px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #ccc;
+        border-top: none;
+        border-radius: 0 0 4px 4px;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-    .champion-info h4 {
-        margin: 0;
-        font-size: 1em;
-        color: #555;
+    .dropdown-item {
+        width: 100%;
+        padding: 0.75rem;
+        text-align: left;
+        border: none;
+        background: none;
+        cursor: pointer;
     }
 
-    .abilities {
-        margin-top: 20px;
+    .dropdown-item:hover {
+        background: #f0f0f0;
     }
 
-    .ability-box {
-        margin-bottom: 15px;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        background-color: #fff;
+    .submit-button {
+        padding: 0.75rem 1.5rem;
+        font-size: 1.1rem;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
     }
 
-    .ability-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 5px;
+    .submit-button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
     }
 
-    .ability-icon-img {
-        width: 30px;
-        height: 30px;
-        margin-right: 10px;
-        border-radius: 50%;
-    }
-
-    .ability-box h5 {
-        margin: 0;
-    }
-
-    .ability-box ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .ability-box ul li {
-        margin: 5px 0;
-    }
-
-    .ability-effects p {
-        margin: 5px 0;
-        font-size: 0.9em;
-        color: #666;
+    .error {
+        color: red;
+        margin-top: 1rem;
     }
 </style>
-

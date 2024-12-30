@@ -1,38 +1,33 @@
 // src/main.rs
-use actix_web::{web, App, HttpServer, Responder, HttpResponse};
+use actix_web::{web, App, HttpServer, Responder};
 use actix_cors::Cors;
 use actix_web::http::header;
 use std::sync::Mutex;
 mod champion;
 mod item;
 mod stats;
+mod player;
 
-use crate::stats::Stats;
-
-async fn get_stats_handler(stats: web::Data<Mutex<Stats>>) -> impl Responder {
-    match stats.lock() {
-        Ok(locked_stats) => HttpResponse::Ok().json(locked_stats.clone()), 
-        Err(_) => HttpResponse::InternalServerError().body("Failed to lock stats"),
-    }
-}
+use crate::player::Player;
 
 pub async fn set_champion_handler(
-    stats: web::Data<Mutex<Stats>>, 
+    player_data: web::Data<Mutex<Player>>,
     champion_name: web::Path<String>,
 ) -> impl Responder {
-    let stats_clone = stats.clone();
-    champion::set_champion(stats_clone, champion_name).await
+    let player_clone = player_data.clone();
+    champion::set_champion(player_clone, champion_name).await
 }
-
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     champion::ensure_cache().await.expect("Failed to ensure champion cache");
-    let stats = web::Data::new(Mutex::new(Stats::new()));
+    item::ensure_cache().await.expect("Failed to ensure item cache");
+
+    let player = web::Data::new(Mutex::new(Player::new()));
 
     HttpServer::new(move || {
         App::new()
-            .app_data(stats.clone())
+            .app_data(player.clone())
             .wrap(
                 Cors::default()
                     .allowed_origin("http://localhost:5173")
@@ -49,9 +44,10 @@ async fn main() -> std::io::Result<()> {
             .route("/setchampion/{champion_name}", web::post().to(set_champion_handler))
             .route("/item", web::get().to(item::fetch_items))
             .route("/item/{name}", web::get().to(item::get_item))
-            .route("/stats", web::get().to(get_stats_handler))
+            .route("/player", web::get().to(player::get_player))
     })
     .bind("127.0.0.1:8080")?
     .run()
     .await
 }
+

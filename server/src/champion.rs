@@ -7,26 +7,44 @@ use std::io::Write;
 use std::sync::Mutex;
 use std::path::Path;
 use crate::stats::{Stat, Stats};
+use crate::player::Player;
 
 
 const CHAMPIONS_URL: &str = "https://cdn.merakianalytics.com/riot/lol/resources/latest/en-US/champions.json";
-const CACHE_PATH: &str = "champs_cache.json";
+const CACHE_PATH: &str = "public/champs_cache.json";
 
 pub async fn ensure_cache() -> Result<(), String> {
     if Path::new(CACHE_PATH).exists() {
-        return Ok(()); 
+        return Ok(());
     }
 
     let client = Client::new();
-    let response = client.get(CHAMPIONS_URL).send().await.map_err(|_| "Failed to fetch data")?;
+    let response = client
+        .get(CHAMPIONS_URL)
+        .send()
+        .await
+        .map_err(|_| "Failed to fetch data from source".to_string())?;
 
     if response.status().is_success() {
-        let body = response.text().await.map_err(|_| "Failed to read body")?;
-        let mut file = File::create(CACHE_PATH).map_err(|_| "Failed to create cache file")?;
-        file.write_all(body.as_bytes()).map_err(|_| "Failed to write to cache file")?;
+        let body = response
+            .text()
+            .await
+            .map_err(|_| "Failed to read response body".to_string())?;
+
+        if let Err(_) = fs::create_dir_all(Path::new(CACHE_PATH).parent().unwrap()) {
+            return Err("Failed to create cache directory".to_string());
+        }
+
+        let mut file = File::create(CACHE_PATH).map_err(|_| "Failed to create cache file".to_string())?;
+        file.write_all(body.as_bytes())
+            .map_err(|_| "Failed to write to cache file".to_string())?;
+
         Ok(())
     } else {
-        Err("Failed to fetch data from source".to_string())
+        Err(format!(
+            "Failed to fetch data from source: HTTP {}",
+            response.status()
+        ))
     }
 }
 
@@ -37,7 +55,7 @@ pub async fn fetch_champs() -> impl Responder {
 
     match fs::read_to_string(CACHE_PATH) {
         Ok(content) => HttpResponse::Ok()
-            .content_type("application/json") // Explicitly set the content type
+            .content_type("application/json") 
             .body(content),
         Err(_) => HttpResponse::InternalServerError().body("Failed to read cache file"),
     }
@@ -59,7 +77,7 @@ pub async fn get_champion(name: web::Path<String>) -> impl Responder {
         Err(_) => return HttpResponse::InternalServerError().body("Failed to parse JSON file"),
     };
 
-    if let Some(champion) = champs.get(&name.into_inner()) {
+    if let Some(champion) = champs.get(name.into_inner()) {
         HttpResponse::Ok().json(champion)
     } else {
         HttpResponse::NotFound().body("Champion not found")
@@ -67,9 +85,8 @@ pub async fn get_champion(name: web::Path<String>) -> impl Responder {
 }
 
 pub async fn get_champion_property_nested(path: web::Path<(String, String)>) -> impl Responder {
-    let cache_path = "champs_cache.json";
 
-    let data = match fs::read_to_string(cache_path) {
+    let data = match fs::read_to_string(CACHE_PATH) {
         Ok(content) => content,
         Err(_) => return HttpResponse::InternalServerError().body("Failed to read cache file"),
     };
@@ -99,18 +116,17 @@ pub async fn get_champion_property_nested(path: web::Path<(String, String)>) -> 
 }
 
 pub async fn set_champion(
-    stats: web::Data<Mutex<Stats>>, 
+    player_data: web::Data<Mutex<Player>>, 
     champion_name: web::Path<String>,
 ) -> impl Responder {
     let champion_name = champion_name.into_inner();
 
-    let mut stats = match stats.lock() {
-        Ok(locked_stats) => locked_stats,
-        Err(_) => return HttpResponse::InternalServerError().body("Failed to lock stats"),
+    let mut player = match player_data.lock() {
+        Ok(locked_player) => locked_player,
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to lock player"),
     };
 
-    let cache_path = "champs_cache.json";
-    let data = match fs::read_to_string(cache_path) {
+    let data = match fs::read_to_string(CACHE_PATH) {
         Ok(content) => content,
         Err(_) => return HttpResponse::InternalServerError().body("Failed to read cache file"),
     };
@@ -122,7 +138,7 @@ pub async fn set_champion(
 
     if let Some(champion) = champs.get(&champion_name) {
         if let Some(base_stats) = champion.get("stats") {
-            match map_base_stats(&mut stats, base_stats) {
+            match map_base_stats(&mut player.base_stats, base_stats) {
                 Ok(()) => {
                     HttpResponse::Ok().body(format!("Champion {} stats updated successfully!", champion_name))
                 },

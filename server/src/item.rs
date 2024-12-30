@@ -1,8 +1,4 @@
-/*
- * File: item.rs
- * Copyright: 2024, Alan Fung
- * Description: returns items or a specific item
- */
+// src/item.rs
 use actix_web::{web, HttpResponse, Responder};
 use reqwest::Client;
 use serde_json::Value;
@@ -11,23 +7,37 @@ use std::io::Write;
 use std::path::Path;
 
 const ITEMS_URL: &str = "https://cdn.merakianalytics.com/riot/lol/resources/latest/en-US/items.json";
-const CACHE_PATH: &str = "items_cache.json";
+const CACHE_PATH: &str = "public/items_cache.json"; 
 
 pub async fn ensure_cache() -> Result<(), String> {
     if Path::new(CACHE_PATH).exists() {
-        return Ok(()); 
+        return Ok(());
+    }
+
+    if let Some(parent) = Path::new(CACHE_PATH).parent() {
+        fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
     }
 
     let client = Client::new();
-    let response = client.get(ITEMS_URL).send().await.map_err(|_| "Failed to fetch data")?;
+    let response = client
+        .get(ITEMS_URL)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to fetch data: {}", e))?;
 
     if response.status().is_success() {
-        let body = response.text().await.map_err(|_| "Failed to read body")?;
-        let mut file = File::create(CACHE_PATH).map_err(|_| "Failed to create cache file")?;
-        file.write_all(body.as_bytes()).map_err(|_| "Failed to write to cache file")?;
+        let body = response
+            .text()
+            .await
+            .map_err(|e| format!("Failed to read response body: {}", e))?;
+
+        let mut file = File::create(CACHE_PATH).map_err(|e| format!("Failed to create cache file: {}", e))?;
+        file.write_all(body.as_bytes())
+            .map_err(|e| format!("Failed to write to cache file: {}", e))?;
+
         Ok(())
     } else {
-        Err("Failed to fetch data from source".to_string())
+        Err(format!("HTTP Error: {}", response.status()))
     }
 }
 
