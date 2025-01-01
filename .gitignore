@@ -1,4 +1,5 @@
 server/target
+server/public
 server/src/data
 server/src/dragontail.tgz
 
