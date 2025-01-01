@@ -20,9 +20,14 @@ pub async fn set_champion_handler(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    champion::ensure_cache().await.expect("Failed to ensure champion cache");
+    champion::ensure_champ_cache().await.expect("Failed to ensure champion cache");
+    champion::ensure_champ_icon_cache().await.expect("Failed to ensure champion icon cache");
     item::ensure_item_cache().await.expect("Failed to ensure item cache");
-    item::ensure_item_icon_cache().await.expect("Failed to ensure item cache");
+    item::ensure_item_icon_cache().await.expect("Failed to ensure item icon cache");
+    //champion::update_champ_cache().await.expect("Failed to update champion cache");
+    //champion::update_champ_icon_cache().await.expect("Failed to update champion icon cache");
+    //item::update_item_cache().await.expect("Failed to update item cache");
+    //item::update_item_icon_cache().await.expect("Failed to update item icon cache");
 
     let player = web::Data::new(Mutex::new(Player::new()));
 

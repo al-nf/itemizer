@@ -3,6 +3,7 @@ use actix_web::{web, HttpResponse};
 use std::sync::Mutex;
 
 use crate::stats::Stats;
+use crate::item::get_item_stats;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Player {
@@ -47,7 +48,13 @@ pub async fn get_player(player_data: web::Data<Mutex<Player>>) -> impl actix_web
         Err(_) => return HttpResponse::InternalServerError().body("Failed to lock player"),
     };
 
-    let merged = Stats::add_stats(&player.base_stats, &player.stats);
+    let mut merged = Stats::add_stats(&player.base_stats, &player.stats);
+
+    for item in player.items {
+        if item != 0 {
+            merged = Stats::add_stats(&merged, &get_item_stats(item).await.unwrap());
+        }
+    }
     let new_stats = PlayerStats {
         level: player.level,
         skill_points: player.skill_points,
@@ -57,17 +64,68 @@ pub async fn get_player(player_data: web::Data<Mutex<Player>>) -> impl actix_web
 }
 
 pub async fn add_item(item: u8, player_data: web::Data<Mutex<Player>>) -> impl actix_web::Responder {
-    let player = match player_data.lock() {
+    let mut player = match player_data.lock() {
         Ok(player) => player,
         Err(_) => return HttpResponse::InternalServerError().body("Failed to lock player"),
     };
 
-    let find_first_item = |player: &Player| -> u8 {
+    let find_first_slot = |player: &Player| -> Option<u8> {
         for i in 0..6 {
             if player.items[i] == 0 {
-                return i;
+                return Some(i as u8);
             }
         }
-        7
+        None
     };
+
+    match find_first_slot(&player) {
+        Some(index) => {
+            player.items[index as usize] = item;
+            HttpResponse::Ok().into()
+        }
+        None => {
+            println!("No inventory space.");
+            HttpResponse::Ok().into()
+        }
+    }
+}
+
+pub async fn remove_last_item(player_data: web::Data<Mutex<Player>>) -> impl actix_web::Responder {
+    let mut player = match player_data.lock() {
+        Ok(player) => player,
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to lock player"),
+    };
+
+    let find_last_item = |player: &Player| -> Option<u8> {
+        for i in (0..6).rev() {
+            if player.items[i] != 0 {
+                return Some(i as u8);
+            }
+        }
+        None
+    };
+
+    match find_last_item(&player) {
+        Some(index) => {
+            player.items[index as usize] = 0;
+            HttpResponse::Ok().into()
+        }
+        None => {
+            println!("No items to remove.");
+            HttpResponse::Ok().into()
+        }
+    }
+}
+
+pub async fn set_item(item: u8, player_data: web::Data<Mutex<Player>>, index: u8) -> impl actix_web::Responder {
+    if index > 5 {
+        return HttpResponse::InternalServerError().body("Item index out of bounds").into();
+    }
+    let mut player = match player_data.lock() {
+        Ok(player) => player,
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to lock player"),
+    };
+
+    player.items[index as usize] = item;
+    HttpResponse::Ok().into()
 }

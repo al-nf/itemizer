@@ -10,17 +10,19 @@ use crate::stats::{Stat, Stats};
 use crate::player::Player;
 
 
-const CHAMPIONS_URL: &str = "https://cdn.merakianalytics.com/riot/lol/resources/latest/en-US/champions.json";
-const CACHE_PATH: &str = "public/champs_cache.json";
+const CHAMP_URL: &str = "https://cdn.merakianalytics.com/riot/lol/resources/latest/en-US/champions.json";
+const CHAMP_ICON_URL: &str = "https://cdn.communitydragon.org/latest/champion/";
+const CHAMP_CACHE_PATH: &str = "public/champs_cache.json";
+const CHAMP_ICON_CACHE_PATH: &str = "public/champ_icons";
 
-pub async fn ensure_cache() -> Result<(), String> {
-    if Path::new(CACHE_PATH).exists() {
+pub async fn ensure_champ_cache() -> Result<(), String> {
+    if Path::new(CHAMP_CACHE_PATH).exists() {
         return Ok(());
     }
 
     let client = Client::new();
     let response = client
-        .get(CHAMPIONS_URL)
+        .get(CHAMP_URL)
         .send()
         .await
         .map_err(|_| "Failed to fetch data from source".to_string())?;
@@ -31,11 +33,11 @@ pub async fn ensure_cache() -> Result<(), String> {
             .await
             .map_err(|_| "Failed to read response body".to_string())?;
 
-        if let Err(_) = fs::create_dir_all(Path::new(CACHE_PATH).parent().unwrap()) {
+        if let Err(_) = fs::create_dir_all(Path::new(CHAMP_CACHE_PATH).parent().unwrap()) {
             return Err("Failed to create cache directory".to_string());
         }
 
-        let mut file = File::create(CACHE_PATH).map_err(|_| "Failed to create cache file".to_string())?;
+        let mut file = File::create(CHAMP_CACHE_PATH).map_err(|_| "Failed to create cache file".to_string())?;
         file.write_all(body.as_bytes())
             .map_err(|_| "Failed to write to cache file".to_string())?;
 
@@ -48,12 +50,186 @@ pub async fn ensure_cache() -> Result<(), String> {
     }
 }
 
+pub async fn update_champ_cache() -> Result<(), String> {
+    if Path::new(CHAMP_CACHE_PATH).exists() {
+        fs::remove_file(CHAMP_CACHE_PATH).map_err(|e| format!("Failed to delete champion cache: {}", e))?;
+    }
+
+    let client = Client::new();
+    let response = client
+        .get(CHAMP_URL)
+        .send()
+        .await
+        .map_err(|_| "Failed to fetch data from source".to_string())?;
+
+    if response.status().is_success() {
+        let body = response
+            .text()
+            .await
+            .map_err(|_| "Failed to read response body".to_string())?;
+
+        if let Err(_) = fs::create_dir_all(Path::new(CHAMP_CACHE_PATH).parent().unwrap()) {
+            return Err("Failed to create cache directory".to_string());
+        }
+
+        let mut file = File::create(CHAMP_CACHE_PATH).map_err(|_| "Failed to create cache file".to_string())?;
+        file.write_all(body.as_bytes())
+            .map_err(|_| "Failed to write to cache file".to_string())?;
+
+        Ok(())
+    } else {
+        Err(format!(
+            "Failed to fetch data from source: HTTP {}",
+            response.status()
+        ))
+    }
+}
+
+pub async fn ensure_champ_icon_cache() -> Result<(), String> {
+    if let Some(parent) = Path::new(CHAMP_ICON_CACHE_PATH).parent() {
+        fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
+    }
+
+    let contains_files = || -> Result<bool, std::io::Error> {
+        for entry in fs::read_dir(CHAMP_ICON_CACHE_PATH)? {
+            let entry = entry?;
+            if entry.file_type()?.is_file() {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    };
+
+    if !contains_files().map_err(|e| e.to_string())? {
+        println!("No files in champ icon cache directory");
+        ensure_champ_cache().await.expect("Failed to ensure champion cache");
+        let champs_json = fs::read_to_string(CHAMP_CACHE_PATH).expect("Unable to read champion cache");
+        let json_value: Value = serde_json::from_str(&champs_json).expect("Invalid JSON format");
+
+        let mut champs: Vec<String> = Vec::new();
+
+        if let Value::Object(map) = json_value {
+            for key in map.keys() {
+                champs.push(key.to_string());
+            }
+        } else {
+            println!("JSON not an object");
+        }
+        
+        let client = Client::new();
+        
+        for champ in champs {
+            for ability in ["p", "q", "w", "e", "r"] {
+                let formatted_url = format!("{}{}/ability-icon/{}.png", CHAMP_ICON_URL, champ, ability);
+
+                let response = client
+                    .get(&formatted_url)
+                    .send()
+                    .await
+                    .map_err(|e| format!("Failed to fetch icon: {}", e))?;
+
+                if response.status().is_success() {
+                    let file_name = format!("{}_{}.png", champ, ability);
+                    let file_path = format!("{}/{}", CHAMP_ICON_CACHE_PATH, file_name);
+
+                    if Path::new(&file_path).exists() {
+                        println!("File already cached: {}", file_path);
+                        continue;
+                    }
+                    
+                    let content = response
+                        .bytes()
+                        .await
+                        .map_err(|e| format!("Failed to read file content: {}", e))?;
+
+                    let mut output_file = File::create(&file_path)
+                        .map_err(|e| format!("Failed to create file: {}", e))?;
+
+                    output_file
+                        .write_all(&content)
+                        .map_err(|e| format!("Failed to write file: {}", e))?;
+
+                    println!("Cached file: {}", file_path);
+                } else {
+                    println!("Failed to download file from: {}", formatted_url);
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+pub async fn update_champ_icon_cache() -> Result<(), String> {
+    if let Some(parent) = Path::new(CHAMP_ICON_CACHE_PATH).parent() {
+        fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
+        if let Err(e) = fs::remove_dir_all(CHAMP_ICON_CACHE_PATH) {
+            eprintln!("Failed to remove directory: {}", e);
+        }
+        fs::create_dir_all(CHAMP_ICON_CACHE_PATH).map_err(|e| format!("Failed to create directory: {}", e))?;
+    }
+
+    ensure_champ_cache().await.expect("Failed to ensure champion cache");
+    let champs_json = fs::read_to_string(CHAMP_CACHE_PATH).expect("Unable to read champion cache");
+    let json_value: Value = serde_json::from_str(&champs_json).expect("Invalid JSON format");
+
+    let mut champs: Vec<String> = Vec::new();
+
+    if let Value::Object(map) = json_value {
+        for key in map.keys() {
+            champs.push(key.to_string());
+        }
+    } else {
+        println!("JSON not an object");
+    }
+    
+    let client = Client::new();
+    
+    for champ in champs {
+        for ability in ["p", "q", "w", "e", "r"] {
+            let formatted_url = format!("{}{}/ability-icon/{}.png", CHAMP_ICON_URL, champ, ability);
+
+            let response = client
+                .get(&formatted_url)
+                .send()
+                .await
+                .map_err(|e| format!("Failed to fetch icon: {}", e))?;
+
+            if response.status().is_success() {
+                let file_name = format!("{}_{}.png", champ, ability);
+                let file_path = format!("{}/{}", CHAMP_ICON_CACHE_PATH, file_name);
+
+                if Path::new(&file_path).exists() {
+                    println!("File already cached: {}", file_path);
+                    continue;
+                }
+                
+                let content = response
+                    .bytes()
+                    .await
+                    .map_err(|e| format!("Failed to read file content: {}", e))?;
+
+                let mut output_file = File::create(&file_path)
+                    .map_err(|e| format!("Failed to create file: {}", e))?;
+
+                output_file
+                    .write_all(&content)
+                    .map_err(|e| format!("Failed to write file: {}", e))?;
+
+                println!("Cached file: {}", file_path);
+            } else {
+                println!("Failed to download file from: {}", formatted_url);
+            }
+        }
+    }
+    Ok(())
+}
+
 pub async fn fetch_champs() -> impl Responder {
-    if let Err(err) = ensure_cache().await {
+    if let Err(err) = ensure_champ_cache().await {
         return HttpResponse::InternalServerError().body(err);
     }
 
-    match fs::read_to_string(CACHE_PATH) {
+    match fs::read_to_string(CHAMP_CACHE_PATH) {
         Ok(content) => HttpResponse::Ok()
             .content_type("application/json") 
             .body(content),
@@ -63,11 +239,11 @@ pub async fn fetch_champs() -> impl Responder {
 
 
 pub async fn get_champion(name: web::Path<String>) -> impl Responder {
-    if let Err(err) = ensure_cache().await {
+    if let Err(err) = ensure_champ_cache().await {
         return HttpResponse::InternalServerError().body(err);
     }
 
-    let data = match fs::read_to_string(CACHE_PATH) {
+    let data = match fs::read_to_string(CHAMP_CACHE_PATH) {
         Ok(content) => content,
         Err(_) => return HttpResponse::InternalServerError().body("Failed to read cache file"),
     };
@@ -86,7 +262,7 @@ pub async fn get_champion(name: web::Path<String>) -> impl Responder {
 
 pub async fn get_champion_property_nested(path: web::Path<(String, String)>) -> impl Responder {
 
-    let data = match fs::read_to_string(CACHE_PATH) {
+    let data = match fs::read_to_string(CHAMP_CACHE_PATH) {
         Ok(content) => content,
         Err(_) => return HttpResponse::InternalServerError().body("Failed to read cache file"),
     };
@@ -126,7 +302,7 @@ pub async fn set_champion(
         Err(_) => return HttpResponse::InternalServerError().body("Failed to lock player"),
     };
 
-    let data = match fs::read_to_string(CACHE_PATH) {
+    let data = match fs::read_to_string(CHAMP_CACHE_PATH) {
         Ok(content) => content,
         Err(_) => return HttpResponse::InternalServerError().body("Failed to read cache file"),
     };
