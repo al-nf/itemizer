@@ -57,7 +57,7 @@ const items = ref<any[]>([])
 const champions = ref<any[]>([])
 const searchQuery = ref('')
 const filteredItems = ref<any[]>([])
-const addedItems = ref<any[]>([]); // Holds added items
+const addedItems = ref<any[]>([]);
 
 onMounted(async () => {
   try {
