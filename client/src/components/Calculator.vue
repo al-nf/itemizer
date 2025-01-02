@@ -14,7 +14,7 @@
 import { ref, onMounted } from 'vue'
 
 const currentChampion = ref<any | null>(null)
-const playerStats = new Map<string, number>
+const playerStats = new Map<string, number>()
 
 onMounted(async () => {
   try {

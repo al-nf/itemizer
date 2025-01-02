@@ -6,13 +6,13 @@ body {
 }
 
 .background {
-  position: fixed; 
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  z-index: 0; 
+  z-index: 0;
 }
 
 .background::before {
@@ -23,10 +23,10 @@ body {
   right: 0;
   bottom: 0;
   background-image: url('@/assets/background.jpg');
-  background-size: cover; 
-  background-position: center; 
+  background-size: cover;
+  background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.05; 
+  opacity: 0.05;
   z-index: 1;
 }
 @media (min-width: 1024px) {
@@ -42,4 +42,3 @@ body {
     max-width: none !important;
   }
 }
-

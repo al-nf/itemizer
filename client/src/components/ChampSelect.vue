@@ -191,5 +191,4 @@ const selectChampion = (champion) => {
   height: 20px;
   margin-right: 10px;
 }
-
 </style>
