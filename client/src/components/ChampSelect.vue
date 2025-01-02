@@ -50,8 +50,8 @@ onMounted(async () => {
       icon: data[key].icon,
     }))
     if (searchInput.value) {
-    searchInput.value.focus()
-    searchInput.value.select()
+      searchInput.value.focus()
+      searchInput.value.select()
     }
   } catch (error) {
     console.error('Error loading champions:', error)
@@ -191,4 +191,5 @@ const selectChampion = (champion) => {
   height: 20px;
   margin-right: 10px;
 }
+
 </style>

@@ -6,11 +6,11 @@
   </div>
 </template>
 
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <style scoped>
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   background-image: url('@/assets/background.jpg');

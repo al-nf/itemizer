@@ -1,30 +1,45 @@
-html, body {
-    height: 100%;
-    margin: 0;
+html,
+body {
+  height: 100%;
+  margin: 0;
+  max-width: 1024px;
 }
 
 .background {
-    position: fixed; /* Use fixed positioning to cover the entire viewport */
-    top: 0;
-    left: 0;
-    width: 100%; /* Set width to 100% */
-    height: 100%; /* Set height to 100% */
-    overflow: hidden; /* Prevents overflow */
-    z-index: 0; /* Places the background behind the content */
+  position: fixed; 
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0; 
 }
 
 .background::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url('@/assets/background.jpg'); /* Ensure the path is correct */
-    background-size: cover; /* Ensures the background covers the entire area */
-    background-position: center; /* Centers the background image */
-    background-repeat: no-repeat; /* Prevents repeating */
-    opacity: 0.05; /* Adjust the opacity here */
-    z-index: 1;
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('@/assets/background.jpg');
+  background-size: cover; 
+  background-position: center; 
+  background-repeat: no-repeat;
+  opacity: 0.05; 
+  z-index: 1;
+}
+@media (min-width: 1024px) {
+  body {
+    display: flex;
+    place-items: center;
+  }
+
+  #app {
+    display: block !important;
+    grid-template-columns: none !important;
+    padding: 0 !important;
+    max-width: none !important;
+  }
 }
 

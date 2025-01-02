@@ -14,6 +14,7 @@
 import { ref, onMounted } from 'vue'
 
 const currentChampion = ref<any | null>(null)
+const playerStats = new Map<string, number>
 
 onMounted(async () => {
   try {
@@ -54,18 +55,17 @@ onMounted(async () => {
 }
 
 .champion-icon {
-  width: 50px;
-  height: 50px;
+  width: 100px;
+  height: 100px;
   margin-right: 10px;
 }
 
 .champion-info {
   font-size: 3em;
-  font-family: "Rubik", sans-serif;
+  font-family: 'Rubik', sans-serif;
   font-weight: 500;
   color: #ffffff;
   margin: 0;
   line-height: 1.2;
 }
 </style>
-
