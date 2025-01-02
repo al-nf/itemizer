@@ -71,7 +71,6 @@ const onEnter = () => {
   if (filteredChampions.value.length > 0) {
     const champName = filteredChampions.value[0].key
     selectChampion(filteredChampions.value[0])
-    onSearch(champName)
   }
 }
 
@@ -100,11 +99,12 @@ const selectChampion = (champion) => {
   searchQuery.value = champion.name
   selectedChampionKey.value = champion.key
   filteredChampions.value = []
+  onSearch(champion.key)
 }
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira Sans:wght@400;700&display=swap');
 
 .search-container {
   display: flex;
@@ -134,7 +134,7 @@ const selectChampion = (champion) => {
   min-width: 200px;
   height: 5vh;
   font-size: 16px;
-  font-family: 'Rubik', sans-serif;
+  font-family: 'Fira Sans', sans-serif;
   z-index: 1;
 }
 
@@ -151,7 +151,7 @@ const selectChampion = (champion) => {
   color: white;
   cursor: pointer;
   font-size: 16px;
-  font-family: 'Rubik', sans-serif;
+  font-family: 'Fira Sans', sans-serif;
   margin-left: 10px;
   z-index: 1;
 }
