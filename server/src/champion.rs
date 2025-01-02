@@ -314,6 +314,7 @@ pub async fn set_champion(
 
     if let Some(champion) = champs.get(&champion_name) {
         if let Some(base_stats) = champion.get("stats") {
+            player.champ = champion_name.to_string();
             match map_base_stats(&mut player.base_stats, base_stats) {
                 Ok(()) => {
                     HttpResponse::Ok().body(format!("Champion {} stats updated successfully!", champion_name))
@@ -352,4 +353,12 @@ fn map_base_stats(stats: &mut Stats, base_stats: &Value) -> Result<(), String> {
     update_stat(&mut stats.movespeed, "movespeed");
 
     Ok(())  
+}
+
+pub async fn get_current_champion(player_data: web::Data<Mutex<Player>>) -> impl Responder {
+    let player = match player_data.lock() {
+        Ok(locked_player) => locked_player,
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to lock player"),
+    };
+    HttpResponse::Ok().body(player.champ.clone())
 }

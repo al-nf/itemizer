@@ -11,7 +11,8 @@ pub struct Player {
     pub skill_points: [u8; 4],
     pub base_stats: Stats,
     pub stats: Stats,
-    pub items: [u8; 6] // Stores item IDs
+    pub items: [u8; 6], // Stores item IDs
+    pub champ: String
 }
 
 impl Default for Player {
@@ -27,7 +28,8 @@ impl Player {
             skill_points: [0; 4],
             base_stats: Stats::new(),
             stats: Stats::new(),
-            items: [0; 6]
+            items: [0; 6],
+            champ: "none".to_string()
         }
     }
 
@@ -42,6 +44,7 @@ struct PlayerStats {
     skill_points: [u8; 4],
     stats: Stats
 }
+
 pub async fn get_player(player_data: web::Data<Mutex<Player>>) -> impl actix_web::Responder {
     let player = match player_data.lock() {
         Ok(player) => player,
@@ -69,10 +72,10 @@ pub async fn add_item(item: u8, player_data: web::Data<Mutex<Player>>) -> impl a
         Err(_) => return HttpResponse::InternalServerError().body("Failed to lock player"),
     };
 
-    let find_first_slot = |player: &Player| -> Option<u8> {
+    let find_first_slot = |player: &Player| -> Option<usize> {
         for i in 0..6 {
             if player.items[i] == 0 {
-                return Some(i as u8);
+                return Some(i);
             }
         }
         None
@@ -80,7 +83,7 @@ pub async fn add_item(item: u8, player_data: web::Data<Mutex<Player>>) -> impl a
 
     match find_first_slot(&player) {
         Some(index) => {
-            player.items[index as usize] = item;
+            player.items[index] = item;
             HttpResponse::Ok().into()
         }
         None => {
@@ -96,10 +99,10 @@ pub async fn remove_last_item(player_data: web::Data<Mutex<Player>>) -> impl act
         Err(_) => return HttpResponse::InternalServerError().body("Failed to lock player"),
     };
 
-    let find_last_item = |player: &Player| -> Option<u8> {
+    let find_last_item = |player: &Player| -> Option<usize> {
         for i in (0..6).rev() {
             if player.items[i] != 0 {
-                return Some(i as u8);
+                return Some(i);
             }
         }
         None
@@ -107,7 +110,7 @@ pub async fn remove_last_item(player_data: web::Data<Mutex<Player>>) -> impl act
 
     match find_last_item(&player) {
         Some(index) => {
-            player.items[index as usize] = 0;
+            player.items[index] = 0;
             HttpResponse::Ok().into()
         }
         None => {
@@ -117,7 +120,7 @@ pub async fn remove_last_item(player_data: web::Data<Mutex<Player>>) -> impl act
     }
 }
 
-pub async fn set_item(item: u8, player_data: web::Data<Mutex<Player>>, index: u8) -> impl actix_web::Responder {
+pub async fn set_item(item: u8, player_data: web::Data<Mutex<Player>>, index: usize) -> impl actix_web::Responder {
     if index > 5 {
         return HttpResponse::InternalServerError().body("Item index out of bounds").into();
     }
@@ -126,6 +129,28 @@ pub async fn set_item(item: u8, player_data: web::Data<Mutex<Player>>, index: u8
         Err(_) => return HttpResponse::InternalServerError().body("Failed to lock player"),
     };
 
-    player.items[index as usize] = item;
+    player.items[index] = item;
     HttpResponse::Ok().into()
+}
+
+pub async fn change_skill_point(ability: usize, player_data: web::Data<Mutex<Player>>, decrease: bool) -> impl actix_web::Responder {
+    if ability > 3 {
+        return HttpResponse::InternalServerError().body("Ability index out of bounds").into();
+    }
+
+    let mut player = match player_data.lock() {
+        Ok(player) => player,
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to lock player"),
+    };
+
+    match decrease {
+        false => {
+            player.skill_points[ability] += 1;
+            HttpResponse::Ok().into()
+        }
+        true => {
+            player.skill_points[ability] -= 1;
+            HttpResponse::Ok().into()
+        }
+    }
 }

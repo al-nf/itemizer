@@ -10,10 +10,7 @@ mod player;
 
 use crate::player::Player;
 
-pub async fn set_champion_handler(
-    player_data: web::Data<Mutex<Player>>,
-    champion_name: web::Path<String>,
-) -> impl Responder {
+pub async fn set_champion_handler(player_data: web::Data<Mutex<Player>>, champion_name: web::Path<String>) -> impl Responder {
     let player_clone = player_data.clone();
     champion::set_champion(player_clone, champion_name).await
 }
@@ -44,6 +41,7 @@ async fn main() -> std::io::Result<()> {
                     ])
                     .max_age(3600),
             )
+            .route("/getchampion", web::get().to(champion::get_current_champion))
             .route("/champion", web::get().to(champion::fetch_champs))
             .route("/champion/{name}", web::get().to(champion::get_champion))
             .route("/champion/{name}/{property:.*}", web::get().to(champion::get_champion_property_nested))

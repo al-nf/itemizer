@@ -1,0 +1,30 @@
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+.background {
+    position: fixed; /* Use fixed positioning to cover the entire viewport */
+    top: 0;
+    left: 0;
+    width: 100%; /* Set width to 100% */
+    height: 100%; /* Set height to 100% */
+    overflow: hidden; /* Prevents overflow */
+    z-index: 0; /* Places the background behind the content */
+}
+
+.background::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('@/assets/background.jpg'); /* Ensure the path is correct */
+    background-size: cover; /* Ensures the background covers the entire area */
+    background-position: center; /* Centers the background image */
+    background-repeat: no-repeat; /* Prevents repeating */
+    opacity: 0.05; /* Adjust the opacity here */
+    z-index: 1;
+}
+
