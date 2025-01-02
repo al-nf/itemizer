@@ -46,6 +46,7 @@ struct PlayerStats {
 }
 
 /*
+ * Need to parse the json from get_item and return the key
 async fn get_item_id(item: String) -> Option<u8> {
     let name_path = web::Path::from(item);
     let response = get_item(name_path).await;
