@@ -1,3 +1,1 @@
-idk either  
-
-TODO: migrate to redis
+refactor item routing
