@@ -1,4 +1,10 @@
-// src/item.rs
+/*
+ * File: item.rs
+ *
+ * Copyright (c) 2025 Alan Fung
+ *
+ * Description: collection of utility functions dealing with items
+ */
 use actix_web::{web, HttpResponse, Responder};
 use std::collections::HashMap;
 use scraper::{Html, Selector};
@@ -15,6 +21,7 @@ const ITEM_ICON_URL: &str = "https://raw.communitydragon.org/latest/plugins/rcp-
 const ITEM_CACHE_PATH: &str = "public/items_cache.json"; 
 const ITEM_ICON_CACHE_PATH: &str = "public/item_icons"; 
 
+/// Checks if item data is cached. If not, creates the cache.
 pub async fn ensure_item_cache() -> Result<(), String> {
     if Path::new(ITEM_CACHE_PATH).exists() {
         return Ok(());
@@ -47,6 +54,7 @@ pub async fn ensure_item_cache() -> Result<(), String> {
     }
 }
 
+/// Deletes cached item data and recreates the cache.
 pub async fn update_item_cache() -> Result<(), String> {
     if Path::new(ITEM_CACHE_PATH).exists() {
         fs::remove_file(ITEM_CACHE_PATH).map_err(|e| format!("Failed to delete item cache: {}", e))?;
@@ -79,6 +87,7 @@ pub async fn update_item_cache() -> Result<(), String> {
     }
 }
 
+/// Checks if item icons are cached. If not, creates the cache.
 pub async fn ensure_item_icon_cache() -> Result<(), String> {
     if let Some(parent) = Path::new(ITEM_ICON_CACHE_PATH).parent() {
         fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
@@ -93,6 +102,10 @@ pub async fn ensure_item_icon_cache() -> Result<(), String> {
         }
         Ok(false)
     };
+
+    if !Path::new(ITEM_ICON_CACHE_PATH).exists() {
+        fs::create_dir(ITEM_ICON_CACHE_PATH).map_err(|e| format!("Failed to create directory: {}", e))?;
+    }
     
     if !contains_files().map_err(|e| e.to_string())? {
         println!("No files in item icon cache directory");
@@ -133,7 +146,7 @@ pub async fn ensure_item_icon_cache() -> Result<(), String> {
             for file in png_files {
                 let file_url = format!("{}/{}", ITEM_ICON_URL, file);
 
-                println!("Downloading file: {}", file_url);
+                //println!("Downloading file: {}", file_url);
 
                 let file_name = file.split('/').last().unwrap_or("unknown.png");
                 let file_path = format!("{}/{}", ITEM_ICON_CACHE_PATH, file_name);
@@ -182,6 +195,7 @@ pub async fn ensure_item_icon_cache() -> Result<(), String> {
     }
 }
 
+/// Deletes cached item icons and recreates the cache.
 pub async fn update_item_icon_cache() -> Result<(), String> {
     if let Some(parent) = Path::new(ITEM_ICON_CACHE_PATH).parent() {
         fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
@@ -191,7 +205,6 @@ pub async fn update_item_icon_cache() -> Result<(), String> {
         fs::create_dir_all(ITEM_ICON_CACHE_PATH).map_err(|e| format!("Failed to create directory: {}", e))?;
     }
 
-    
     let client = Client::new();
 
     let response = client
@@ -221,10 +234,12 @@ pub async fn update_item_icon_cache() -> Result<(), String> {
             })
             .collect();
 
+        /*
         println!("Detected PNG files:");
         for file in &png_files {
             println!("{}", file);
         }
+        */
 
         for file in png_files {
             let file_url = format!("{}/{}", ITEM_ICON_URL, file);
@@ -275,7 +290,7 @@ pub async fn update_item_icon_cache() -> Result<(), String> {
     }
 }
 
-
+/// Retrieves all item data.
 pub async fn fetch_items() -> impl Responder {
     if let Err(err) = ensure_item_cache().await {
         return HttpResponse::InternalServerError().body(err);
@@ -289,6 +304,7 @@ pub async fn fetch_items() -> impl Responder {
     }
 }
 
+/// Retrieves a certain item's data.
 pub async fn get_item(name: web::Path<String>) -> impl Responder {
     if let Err(err) = ensure_item_cache().await {
         return HttpResponse::InternalServerError().body(err);
@@ -317,6 +333,7 @@ pub async fn get_item(name: web::Path<String>) -> impl Responder {
     HttpResponse::NotFound().body("Item not found")
 }
 
+/// Retrieves the stats of a given item.
 pub async fn get_item_stats(id: u8) -> Option<Stats> {
     let mut file = File::open(ITEM_CACHE_PATH).expect("Unable to open file");
     let mut data = String::new();

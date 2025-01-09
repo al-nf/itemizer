@@ -1,4 +1,10 @@
-// src/stats.rs
+/*
+ * File: stats.rs
+ *
+ * Copyright (c) 2025 ALan Fung
+ *
+ * Description: structs, implementations, and utility functions dealing with stats
+ */
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

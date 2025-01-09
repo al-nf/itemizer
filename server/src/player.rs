@@ -1,9 +1,16 @@
+/*
+ * File: player.rs
+ *
+ * Copyright (c) 2025 Alan Fung
+ *
+ * Description: structs, implementations, and utility functions dealing with the local plyaer
+ */
 use serde::{Deserialize, Serialize};
 use actix_web::{web, HttpResponse};
 use std::sync::Mutex;
 
 use crate::stats::Stats;
-use crate::item::{get_item, get_item_stats};
+use crate::item::get_item_stats;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Player {
@@ -11,7 +18,7 @@ pub struct Player {
     pub skill_points: [u8; 4],
     pub base_stats: Stats,
     pub stats: Stats,
-    pub items: [u8; 6], // Stores item IDs
+    pub items: [u8; 6], // Stores item IDs instead of names
     pub champ: String
 }
 
@@ -44,25 +51,6 @@ struct PlayerStats {
     skill_points: [u8; 4],
     stats: Stats
 }
-
-/*
- * Need to parse the json from get_item and return the key
-async fn get_item_id(item: String) -> Option<u8> {
-    let name_path = web::Path::from(item);
-    let response = get_item(name_path).await;
-
-    if let Ok(body_bytes) = response.try_into_body().try_into_bytes() {
-        if let Ok(parsed_json) = serde_json::from_slice::<Value>(&body_bytes) {
-            if let Some(first_key) = parsed_json.as_object().and_then(|map| map.keys().next()) {
-                if let Ok(id) = first_key.parse::<u8>() {
-                    return Some(id); 
-                }
-            }
-        }
-    }
-    None
-}
-*/
 
 pub async fn get_player(player_data: web::Data<Mutex<Player>>) -> impl actix_web::Responder {
     let player = match player_data.lock() {
@@ -100,9 +88,6 @@ pub async fn add_item(item: u8, player_data: web::Data<Mutex<Player>>) -> impl a
         None
     };
 
-    // FIND THE u8 from the get_item
-
-    
     match find_first_slot(&player) {
         Some(index) => {
             player.items[index] = item;

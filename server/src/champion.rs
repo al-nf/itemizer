@@ -1,4 +1,10 @@
-// src/champion.rs
+/*
+ * File: champion.rs
+ *
+ * Copyright (c) 2025 Alan Fung
+ *
+ * Description: A collection of utility functions dealing with champions
+ */
 use actix_web::{web, HttpResponse, Responder};
 use reqwest::Client;
 use serde_json::Value;
@@ -15,6 +21,7 @@ const CHAMP_ICON_URL: &str = "https://cdn.communitydragon.org/latest/champion/";
 const CHAMP_CACHE_PATH: &str = "public/champs_cache.json";
 const CHAMP_ICON_CACHE_PATH: &str = "public/champ_icons";
 
+/// Checks if champion data is cached. If not, creates the cache.
 pub async fn ensure_champ_cache() -> Result<(), String> {
     if Path::new(CHAMP_CACHE_PATH).exists() {
         return Ok(());
@@ -50,6 +57,7 @@ pub async fn ensure_champ_cache() -> Result<(), String> {
     }
 }
 
+/// Deletes cached champion data and recreates the cache.
 pub async fn update_champ_cache() -> Result<(), String> {
     if Path::new(CHAMP_CACHE_PATH).exists() {
         fs::remove_file(CHAMP_CACHE_PATH).map_err(|e| format!("Failed to delete champion cache: {}", e))?;
@@ -85,6 +93,7 @@ pub async fn update_champ_cache() -> Result<(), String> {
     }
 }
 
+/// Checks if champion icons are cached. If not, creates the cache.
 pub async fn ensure_champ_icon_cache() -> Result<(), String> {
     if let Some(parent) = Path::new(CHAMP_ICON_CACHE_PATH).parent() {
         fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
@@ -99,6 +108,10 @@ pub async fn ensure_champ_icon_cache() -> Result<(), String> {
         }
         Ok(false)
     };
+
+    if !Path::new(CHAMP_ICON_CACHE_PATH).exists() {
+        fs::create_dir(CHAMP_ICON_CACHE_PATH).map_err(|e| format!("Failed to create directory: {}", e))?;
+    }
 
     if !contains_files().map_err(|e| e.to_string())? {
         println!("No files in champ icon cache directory");
@@ -159,6 +172,7 @@ pub async fn ensure_champ_icon_cache() -> Result<(), String> {
     Ok(())
 }
 
+/// Deletes cached champion icons and recreates the cache.
 pub async fn update_champ_icon_cache() -> Result<(), String> {
     if let Some(parent) = Path::new(CHAMP_ICON_CACHE_PATH).parent() {
         fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
@@ -224,6 +238,7 @@ pub async fn update_champ_icon_cache() -> Result<(), String> {
     Ok(())
 }
 
+/// Retrieves all champion data.
 pub async fn fetch_champs() -> impl Responder {
     if let Err(err) = ensure_champ_cache().await {
         return HttpResponse::InternalServerError().body(err);
@@ -237,7 +252,7 @@ pub async fn fetch_champs() -> impl Responder {
     }
 }
 
-
+/// Retrieves a certain champion's data.
 pub async fn get_champion(name: web::Path<String>) -> impl Responder {
     if let Err(err) = ensure_champ_cache().await {
         return HttpResponse::InternalServerError().body(err);
@@ -260,6 +275,7 @@ pub async fn get_champion(name: web::Path<String>) -> impl Responder {
     }
 }
 
+/// Provides quick access for a nested champion property. Might be useless.
 pub async fn get_champion_property_nested(path: web::Path<(String, String)>) -> impl Responder {
 
     let data = match fs::read_to_string(CHAMP_CACHE_PATH) {
@@ -291,10 +307,8 @@ pub async fn get_champion_property_nested(path: web::Path<(String, String)>) -> 
     HttpResponse::NotFound().body("Champion not found")
 }
 
-pub async fn set_champion(
-    player_data: web::Data<Mutex<Player>>, 
-    champion_name: web::Path<String>,
-) -> impl Responder {
+/// Updates the player with a given champion.
+pub async fn set_champion(player_data: web::Data<Mutex<Player>>, champion_name: web::Path<String>) -> impl Responder {
     let champion_name = champion_name.into_inner();
 
     let mut player = match player_data.lock() {
@@ -329,7 +343,7 @@ pub async fn set_champion(
     }
 }
 
-
+/// Helper function to map the player base stats
 fn map_base_stats(stats: &mut Stats, base_stats: &Value) -> Result<(), String> {
     let update_stat = |stat: &mut Stat, key: &str| {
         if let Some(stat_data) = base_stats.get(key) {
@@ -355,6 +369,7 @@ fn map_base_stats(stats: &mut Stats, base_stats: &Value) -> Result<(), String> {
     Ok(())  
 }
 
+/// Fetches the champion associated with the local player.
 pub async fn get_current_champion(player_data: web::Data<Mutex<Player>>) -> impl Responder {
     let player = match player_data.lock() {
         Ok(locked_player) => locked_player,
