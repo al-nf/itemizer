@@ -73,23 +73,14 @@ pub async fn get_player(player_data: web::Data<Mutex<Player>>) -> impl actix_web
 pub async fn add_item(item: u8, player_data: web::Data<Mutex<Player>>) -> impl actix_web::Responder {
     let mut player = player_data.lock().await;
 
-    let find_first_slot = |player: &Player| -> Option<usize> {
-        for i in 0..6 {
-            if player.items[i] == 0 {
-                return Some(i);
-            }
-        }
-        None
-    };
-
-    match find_first_slot(&player) {
+    match (0..6).find(|&i| player.items[i] == 0) {
         Some(index) => {
             player.items[index] = item;
-            HttpResponse::Ok()
+            HttpResponse::Ok().body(format!("Successfully added item {} to player", item))
         }
         None => {
             println!("No inventory space.");
-            HttpResponse::Ok().into()
+            HttpResponse::InternalServerError().body("Not enough space to add an item!")
         }
     }
 }
@@ -97,40 +88,31 @@ pub async fn add_item(item: u8, player_data: web::Data<Mutex<Player>>) -> impl a
 pub async fn remove_last_item(player_data: web::Data<Mutex<Player>>) -> impl actix_web::Responder {
     let mut player = player_data.lock().await;
 
-    let find_last_item = |player: &Player| -> Option<usize> {
-        for i in (0..6).rev() {
-            if player.items[i] != 0 {
-                return Some(i);
-            }
-        }
-        None
-    };
-
-    match find_last_item(&player) {
+    match (0..6).rev().find(|&i| player.items[i] != 0) {
         Some(index) => {
             player.items[index] = 0;
-            HttpResponse::Ok().into()
+            HttpResponse::Ok().body("Successfully removed last item from player")
         }
         None => {
             println!("No items to remove.");
-            HttpResponse::Ok().into()
+            HttpResponse::InternalServerError().body("No items to remove!")
         }
     }
 }
 
 pub async fn set_item(item: u8, player_data: web::Data<Mutex<Player>>, index: usize) -> impl actix_web::Responder {
     if index > 5 {
-        return HttpResponse::InternalServerError().body("Item index out of bounds").into();
+        return HttpResponse::InternalServerError().body("Item index out of bounds");
     }
     let mut player = player_data.lock().await;
 
     player.items[index] = item;
-    HttpResponse::Ok().into()
+    HttpResponse::Ok().body(format!("Successfully set slot {} to item {}", index, item))
 }
 
 pub async fn change_skill_point(ability: usize, player_data: web::Data<Mutex<Player>>, decrease: bool) -> impl actix_web::Responder {
     if ability > 3 {
-        return HttpResponse::InternalServerError().body("Ability index out of bounds").into();
+        return HttpResponse::InternalServerError().body("Ability index out of bounds");
     }
 
     let mut player = player_data.lock().await;
@@ -138,11 +120,11 @@ pub async fn change_skill_point(ability: usize, player_data: web::Data<Mutex<Pla
     match decrease {
         false => {
             player.skill_points[ability] += 1;
-            HttpResponse::Ok().into()
+            HttpResponse::Ok().body(format!("Successfully increased the skill point of ability {}", ability))
         }
         true => {
             player.skill_points[ability] -= 1;
-            HttpResponse::Ok().into()
+            HttpResponse::Ok().body(format!("Successfully decreased the skill point of ability {}", ability))
         }
     }
 }

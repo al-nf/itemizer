@@ -25,11 +25,7 @@
     </div>
 
     <ul v-if="filteredItems.length" class="suggestions">
-      <li
-        v-for="item in filteredItems"
-        :key="item.key"
-        @click="selectItem(item)"
-      >
+      <li v-for="item in filteredItems" :key="item.key" @click="selectItem(item)">
         <img :src="item.icon" alt="Item Icon" class="icon" />
         {{ item.name }}
       </li>
@@ -47,7 +43,6 @@
   </div>
 </template>
 
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
@@ -57,7 +52,7 @@ const items = ref<any[]>([])
 const champions = ref<any[]>([])
 const searchQuery = ref('')
 const filteredItems = ref<any[]>([])
-const addedItems = ref<any[]>([]);
+const addedItems = ref<any[]>([])
 
 onMounted(async () => {
   try {
@@ -134,12 +129,11 @@ const onSearch = async (name: string) => {
       console.log('Response from server:', result)
 
       if (addedItems.value.length < 6) {
-        const itemToAdd = items.value.find((item) => item.name === name);
+        const itemToAdd = items.value.find((item) => item.name === name)
         if (itemToAdd) {
-          addedItems.value.push(itemToAdd);
+          addedItems.value.push(itemToAdd)
         }
       }
-
     } catch (error) {
       console.error('Error:', error)
     }
@@ -295,4 +289,3 @@ const selectItem = (item) => {
   line-height: 1.2;
 }
 </style>
-

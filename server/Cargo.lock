@@ -993,6 +993,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4345964bb142484797b161f473a503a434de77149dd8c7427788c6e13379388"
 
 [[package]]
+name = "ldc"
+version = "0.1.0"
+dependencies = [
+ "actix-cors",
+ "actix-web",
+ "reqwest",
+ "scraper",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.169"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2231,19 +2244,6 @@ name = "writeable"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e9df38ee2d2c3c5948ea468a8406ff0db0b29ae1ffde1bcf20ef305bcc95c51"
-
-[[package]]
-name = "yespls"
-version = "0.1.0"
-dependencies = [
- "actix-cors",
- "actix-web",
- "reqwest",
- "scraper",
- "serde",
- "serde_json",
- "tokio",
-]
 
 [[package]]
 name = "yoke"
