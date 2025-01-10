@@ -10,7 +10,7 @@ use reqwest::Client;
 use serde_json::Value;
 use std::fs::{self, File};
 use std::io::Write;
-use std::sync::Mutex;
+use tokio::sync::Mutex;
 use std::path::Path;
 use crate::stats::{Stat, Stats};
 use crate::player::Player;
@@ -311,10 +311,7 @@ pub async fn get_champion_property_nested(path: web::Path<(String, String)>) -> 
 pub async fn set_champion(player_data: web::Data<Mutex<Player>>, champion_name: web::Path<String>) -> impl Responder {
     let champion_name = champion_name.into_inner();
 
-    let mut player = match player_data.lock() {
-        Ok(locked_player) => locked_player,
-        Err(_) => return HttpResponse::InternalServerError().body("Failed to lock player"),
-    };
+    let mut player = player_data.lock().await;
 
     let data = match fs::read_to_string(CHAMP_CACHE_PATH) {
         Ok(content) => content,
@@ -371,9 +368,6 @@ fn map_base_stats(stats: &mut Stats, base_stats: &Value) -> Result<(), String> {
 
 /// Fetches the champion associated with the local player.
 pub async fn get_current_champion(player_data: web::Data<Mutex<Player>>) -> impl Responder {
-    let player = match player_data.lock() {
-        Ok(locked_player) => locked_player,
-        Err(_) => return HttpResponse::InternalServerError().body("Failed to lock player"),
-    };
+    let player = player_data.lock().await;
     HttpResponse::Ok().body(player.champ.clone())
 }

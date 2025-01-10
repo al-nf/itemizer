@@ -8,7 +8,7 @@
 use actix_web::{web, App, HttpServer};
 use actix_cors::Cors;
 use actix_web::http::header;
-use std::sync::Mutex;
+use tokio::sync::Mutex;
 mod champion;
 mod item;
 mod stats;
