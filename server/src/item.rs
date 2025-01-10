@@ -334,7 +334,7 @@ pub async fn get_item(name: web::Path<String>) -> impl Responder {
 }
 
 /// Retrieves the stats of a given item.
-pub async fn get_item_stats(id: u8) -> Option<Stats> {
+pub async fn get_item_stats(id: u16) -> Option<Stats> {
     let mut file = File::open(ITEM_CACHE_PATH).expect("Unable to open file");
     let mut data = String::new();
     ensure_item_cache().await.expect("Failed to ensure item cache");
@@ -344,7 +344,7 @@ pub async fn get_item_stats(id: u8) -> Option<Stats> {
         serde_json::from_str(&data).expect("JSON poorly formatted");
 
     items.values()
-        .find(|item| item.get("id").and_then(|v| v.as_u64()).map(|v| v as u8) == Some(id))
+        .find(|item| item.get("id").and_then(|v| v.as_u64()).map(|v| v as u16) == Some(id))
         .and_then(|item| {
             let stats: Stats = serde_json::from_value(item.get("stats")?.clone()).ok()?;
             Some(stats)

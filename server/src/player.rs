@@ -18,7 +18,7 @@ pub struct Player {
     pub skill_points: [u8; 4],
     pub base_stats: Stats,
     pub stats: Stats,
-    pub items: [u8; 6], // Stores item IDs instead of names
+    pub items: [u16; 6], // Stores item IDs instead of names
     pub champ: String
 }
 
@@ -70,12 +70,12 @@ pub async fn get_player(player_data: web::Data<Mutex<Player>>) -> impl actix_web
     HttpResponse::Ok().json(new_stats)
 }
 
-pub async fn add_item(item: u8, player_data: web::Data<Mutex<Player>>) -> impl actix_web::Responder {
+pub async fn add_item(player_data: web::Data<Mutex<Player>>, item: web::Path<u16>) -> impl actix_web::Responder {
     let mut player = player_data.lock().await;
 
     match (0..6).find(|&i| player.items[i] == 0) {
         Some(index) => {
-            player.items[index] = item;
+            player.items[index] = *item;
             HttpResponse::Ok().body(format!("Successfully added item {} to player", item))
         }
         None => {
@@ -100,31 +100,34 @@ pub async fn remove_last_item(player_data: web::Data<Mutex<Player>>) -> impl act
     }
 }
 
-pub async fn set_item(item: u8, player_data: web::Data<Mutex<Player>>, index: usize) -> impl actix_web::Responder {
-    if index > 5 {
+pub async fn set_item(player_data: web::Data<Mutex<Player>>, index: web::Path<usize>, item: web::Path<u16>) -> impl actix_web::Responder {
+    if index > 5.into() {
         return HttpResponse::InternalServerError().body("Item index out of bounds");
     }
     let mut player = player_data.lock().await;
 
-    player.items[index] = item;
+    player.items[*index] = *item;
     HttpResponse::Ok().body(format!("Successfully set slot {} to item {}", index, item))
 }
 
-pub async fn change_skill_point(ability: usize, player_data: web::Data<Mutex<Player>>, decrease: bool) -> impl actix_web::Responder {
-    if ability > 3 {
+pub async fn change_skill_point(player_data: web::Data<Mutex<Player>>, ability: web::Path<usize>, which_way: web::Path<String>) -> impl actix_web::Responder {
+    if ability > 3.into() || ability == 0.into() {
         return HttpResponse::InternalServerError().body("Ability index out of bounds");
     }
 
     let mut player = player_data.lock().await;
 
-    match decrease {
-        false => {
-            player.skill_points[ability] += 1;
+    match which_way.as_str() {
+        "plus" => {
+            player.skill_points[*ability] += 1;
             HttpResponse::Ok().body(format!("Successfully increased the skill point of ability {}", ability))
         }
-        true => {
-            player.skill_points[ability] -= 1;
+        "minus" => {
+            player.skill_points[*ability] -= 1;
             HttpResponse::Ok().body(format!("Successfully decreased the skill point of ability {}", ability))
+        }
+        _ => {
+            HttpResponse::BadRequest().body("Invalid input: needs to be either 'plus' or 'minus'")
         }
     }
 }
