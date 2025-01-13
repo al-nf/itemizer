@@ -12,13 +12,20 @@ use tokio::sync::Mutex;
 use crate::stats::Stats;
 use crate::item::get_item_stats;
 
+/// stores player information
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Player {
+    /// level can range from 0 to 18
     pub level: u8,
+    /// skill point cap should be enforced by the frontend
     pub skill_points: [u8; 4],
+    /// base stats are provided by the champion
     pub base_stats: Stats,
+    /// stats are provided by levels and items
     pub stats: Stats,
-    pub items: [u16; 6], // Stores item IDs instead of names
+    /// items are stored as their ids
+    pub items: [u16; 6],
+    /// champion name is stored as a String for quick access
     pub champ: String
 }
 

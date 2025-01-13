@@ -7,6 +7,7 @@
  */
 use serde::{Deserialize, Serialize};
 
+/// stores fields of an individual statistic
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Stat {
     pub flat: f64,
@@ -16,6 +17,7 @@ pub struct Stat {
     pub percent_bonus: f64,
 }
 
+/// stores all statistics as Stat structs
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Stats {
     pub ability_power: Stat,
@@ -135,4 +137,3 @@ impl Stats {
     }
 
 }
-
