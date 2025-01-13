@@ -16,19 +16,21 @@ mod player;
 
 use crate::player::Player;
 
+pub async fn update_caches() -> impl actix_web::Responder {
+    champion::update_champ_cache().await.expect("Failed to update champion cache");
+    champion::update_champ_icon_cache().await.expect("Failed to update champion icon cache");
+    item::update_item_cache().await.expect("Failed to update item cache");
+    item::update_item_icon_cache().await.expect("Failed to update item icon cache");
+
+    actix_web::HttpResponse::Ok()
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     champion::ensure_champ_cache().await.expect("Failed to ensure champion cache");
     champion::ensure_champ_icon_cache().await.expect("Failed to ensure champion icon cache");
     item::ensure_item_cache().await.expect("Failed to ensure item cache");
     item::ensure_item_icon_cache().await.expect("Failed to ensure item icon cache");
-    /*
-     * Force update caches: In the future, tie this to a route
-    champion::update_champ_cache().await.expect("Failed to update champion cache");
-    champion::update_champ_icon_cache().await.expect("Failed to update champion icon cache");
-    item::update_item_cache().await.expect("Failed to update item cache");
-    item::update_item_icon_cache().await.expect("Failed to update item icon cache");
-    */
 
     let player = web::Data::new(Mutex::new(Player::new()));
 
@@ -45,6 +47,7 @@ async fn main() -> std::io::Result<()> {
                     ])
                     .max_age(3600),
             )
+            .route("/updatecaches", web::put().to(update_caches))
             .route("/getchampion", web::get().to(champion::get_current_champion))
             .route("/champion", web::get().to(champion::fetch_champs))
             .route("/champion/{name}", web::get().to(champion::get_champion))
