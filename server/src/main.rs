@@ -53,6 +53,10 @@ async fn main() -> std::io::Result<()> {
             .route("/item", web::get().to(item::fetch_items))
             .route("/item/{name}", web::get().to(item::get_item))
             .route("/player", web::get().to(player::get_player))
+            .route("/additem/{id}", web::post().to(player::add_item))
+            .route("/removelastitem", web::post().to(player::remove_last_item))
+            .route("/setitem/{slot}/{id}", web::post().to(player::set_item))
+            .route("/changeskillpoint/{slot}/{up/down}", web::post().to(player::change_skill_point))
     })
     .bind("127.0.0.1:8080")?
     .run()

@@ -125,11 +125,11 @@ pub async fn change_skill_point(player_data: web::Data<Mutex<Player>>, ability: 
     let mut player = player_data.lock().await;
 
     match which_way.as_str() {
-        "plus" => {
+        "up" => {
             player.skill_points[*ability] += 1;
             HttpResponse::Ok().body(format!("Successfully increased the skill point of ability {}", ability))
         }
-        "minus" => {
+        "down" => {
             player.skill_points[*ability] -= 1;
             HttpResponse::Ok().body(format!("Successfully decreased the skill point of ability {}", ability))
         }
