@@ -56,6 +56,7 @@ async fn main() -> std::io::Result<()> {
             .route("/item", web::get().to(item::fetch_items))
             .route("/item/{name}", web::get().to(item::get_item))
             .route("/player", web::get().to(player::get_player))
+            .route("/displayplayerstats", web::get().to(player::display_stats))
             .route("/getitemid/{name}", web::get().to(item::get_item_id))
             .route("/additem/{id}", web::post().to(player::add_item))
             .route("/removelastitem", web::post().to(player::remove_last_item))
