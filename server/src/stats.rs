@@ -62,6 +62,7 @@ impl Stat {
     }
 }
 
+/// Adds two individual stats together.
 pub fn add(stat1: &Stat, stat2: &Stat) -> Stat {
     Stat {
         flat: stat1.flat + stat2.flat,
@@ -111,6 +112,7 @@ impl Stats {
         Stats::new()
     }
 
+    /// Adds all stats together.
     pub fn add_stats(stats1: &Stats, stats2: &Stats) -> Stats {
         let mut merged = Stats::new();
         

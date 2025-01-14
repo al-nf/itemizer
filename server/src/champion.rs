@@ -352,7 +352,6 @@ fn map_base_stats(stats: &mut Stats, base_stats: &Value) -> Result<(), String> {
         }
     };
 
-
     update_stat(&mut stats.armor, "armor");
     update_stat(&mut stats.attack_damage, "attackDamage");
     update_stat(&mut stats.attack_speed, "attackSpeed");

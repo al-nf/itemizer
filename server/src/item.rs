@@ -384,6 +384,7 @@ pub async fn get_item_stats(id: u16) -> Option<Stats> {
                 attack_speed_stat.flat = 0.0; 
             }
 
+            // rabadon's deathcap
             if id == 3089 {
                 let ability_power_stat = &mut stats.ability_power;
                 ability_power_stat.percent += 30.0;

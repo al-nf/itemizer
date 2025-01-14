@@ -4,7 +4,8 @@
  * Copyright (c) 2025 Alan Fung
  *
  * Description: structs, implementations, and utility functions dealing with the local plyaer
- */ use serde::{Deserialize, Serialize};
+ */ 
+use serde::{Deserialize, Serialize};
 use actix_web::{web, HttpResponse};
 use tokio::sync::Mutex;
 
@@ -51,6 +52,7 @@ impl Player {
     }
 }
 
+/// This structure is important only to display the output for get_player.
 #[derive(Serialize)]
 struct PlayerStats {
     champion: String,
@@ -60,6 +62,8 @@ struct PlayerStats {
     stats: Stats
 }
 
+/// Shows all of the player's stats. Probably doesn't need to be kept, but this is important for
+/// debugging purposes.
 pub async fn get_player(player_data: web::Data<Mutex<Player>>) -> impl actix_web::Responder {
     let player = player_data.lock().await;
 
@@ -84,6 +88,7 @@ pub async fn get_player(player_data: web::Data<Mutex<Player>>) -> impl actix_web
     HttpResponse::Ok().json(new_stats)
 }
 
+// Adds a given item id to the first vacant spot in the player's inventory.
 pub async fn add_item(player_data: web::Data<Mutex<Player>>, path: web::Path<u16>) -> impl actix_web::Responder {
     let mut player = player_data.lock().await;
     let item_id = path.into_inner();
@@ -100,6 +105,7 @@ pub async fn add_item(player_data: web::Data<Mutex<Player>>, path: web::Path<u16
     }
 }
 
+/// Deletes the last available item from the player's inventory.
 pub async fn remove_last_item(player_data: web::Data<Mutex<Player>>) -> impl actix_web::Responder {
     let mut player = player_data.lock().await;
 
@@ -114,6 +120,7 @@ pub async fn remove_last_item(player_data: web::Data<Mutex<Player>>) -> impl act
     }
 }
 
+/// Sets a given item slot to a given item id.
 pub async fn set_item(player_data: web::Data<Mutex<Player>>, path: web::Path<(usize, u16)>) -> impl actix_web::Responder {
     let (item, item_id) = path.into_inner();
     if item > 5 {
@@ -125,6 +132,8 @@ pub async fn set_item(player_data: web::Data<Mutex<Player>>, path: web::Path<(us
     HttpResponse::Ok().body(format!("Successfully set item {} to id {}", item, item_id))
 }
 
+/// Either increments or decrements the skill points of a certain ability. This is unrestricted by
+/// the level of the player and the amount of skill points used. This can be left to the frontend.
 pub async fn change_skill_point(player_data: web::Data<Mutex<Player>>, path: web::Path<(usize, String)>) -> impl actix_web::Responder {
     let (ability, which_way) = path.into_inner();
     if ability > 3 || ability == 0 {
@@ -148,6 +157,7 @@ pub async fn change_skill_point(player_data: web::Data<Mutex<Player>>, path: web
     }
 }
 
+/// This structure is only useful for displaying the output of display_stats.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct UserStats {
@@ -168,6 +178,7 @@ struct UserStats {
     tenacity: f64,
 }
 
+/// Shows the stats that the user cares about post-calculations
 pub async fn display_stats(player_data: web::Data<Mutex<Player>>) -> impl actix_web::Responder {
     let player = player_data.lock().await;
 
