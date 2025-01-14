@@ -66,7 +66,11 @@ pub async fn get_player(player_data: web::Data<Mutex<Player>>) -> impl actix_web
 
     for item in player.items {
         if item != 0 {
-            merged = Stats::add_stats(&merged, &get_item_stats(item).await.unwrap());
+            if let Some(item_stats) = &get_item_stats(item).await {
+                merged = Stats::add_stats(&merged, item_stats);
+            } else {
+                println!("No item in slot {}", item);
+            }
         }
     }
     let new_stats = PlayerStats {

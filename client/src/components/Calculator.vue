@@ -118,7 +118,13 @@ const onEnter = () => {
 const onSearch = async (name: string) => {
   if (name) {
     try {
-      const response = await fetch(`http://localhost:8080/additem/${name}`, {
+      const idResponse = await fetch(`http://localhost:8080/getitemid/${name}`, {
+        method: 'GET',
+      })
+
+      const id = await idResponse.text();
+
+      const response = await fetch(`http://localhost:8080/additem/${id}`, {
         method: 'POST',
       })
       if (!response.ok) {

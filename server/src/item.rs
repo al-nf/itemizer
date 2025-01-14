@@ -333,6 +333,35 @@ pub async fn get_item(name: web::Path<String>) -> impl Responder {
     HttpResponse::NotFound().body("Item not found")
 }
 
+pub async fn get_item_id(name: web::Path<String>) -> impl Responder {
+    if let Err(err) = ensure_item_cache().await {
+        return HttpResponse::InternalServerError().body(err);
+    }
+
+    let data = match fs::read_to_string(ITEM_CACHE_PATH) {
+        Ok(content) => content,
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to read cache file"),
+    };
+
+    let items: serde_json::Value = match serde_json::from_str(&data) {
+        Ok(parsed) => parsed,
+        Err(_) => return HttpResponse::InternalServerError().body("Failed to parse JSON file"),
+    };
+
+    if let Some(items_map) = items.as_object() {
+        for (key, item) in items_map {
+            if let Some(item_name) = item.get("name").and_then(|n| n.as_str()) {
+                if item_name.eq_ignore_ascii_case(&name) {
+                    return HttpResponse::Ok().body(key.clone());
+                }
+            }
+        }
+    }
+
+    HttpResponse::NotFound().body("Item not found")
+}
+
+
 /// Retrieves the stats of a given item.
 pub async fn get_item_stats(id: u16) -> Option<Stats> {
     let mut file = File::open(ITEM_CACHE_PATH).expect("Unable to open file");
@@ -346,7 +375,15 @@ pub async fn get_item_stats(id: u16) -> Option<Stats> {
     items.values()
         .find(|item| item.get("id").and_then(|v| v.as_u64()).map(|v| v as u16) == Some(id))
         .and_then(|item| {
-            let stats: Stats = serde_json::from_value(item.get("stats")?.clone()).ok()?;
+            let mut stats: Stats = serde_json::from_value(item.get("stats")?.clone()).ok()?;
+
+            // stupid attack speed workaround
+            let attack_speed_stat = &mut stats.attack_speed;
+            if attack_speed_stat.flat != 0.0 { 
+                attack_speed_stat.percent += attack_speed_stat.flat; 
+                attack_speed_stat.flat = 0.0; 
+            }
+
             Some(stats)
         })
 }
