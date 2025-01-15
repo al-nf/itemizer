@@ -88,7 +88,7 @@ pub async fn get_player(player_data: web::Data<Mutex<Player>>) -> impl actix_web
     HttpResponse::Ok().json(new_stats)
 }
 
-// Adds a given item id to the first vacant spot in the player's inventory.
+/// Adds a given item id to the first vacant spot in the player's inventory.
 pub async fn add_item(player_data: web::Data<Mutex<Player>>, path: web::Path<u16>) -> impl actix_web::Responder {
     let mut player = player_data.lock().await;
     let item_id = path.into_inner();
@@ -195,7 +195,7 @@ pub async fn display_stats(player_data: web::Data<Mutex<Player>>) -> impl actix_
             }
         }
     }
-
+    
     let new_stats = UserStats {
         ability_power: merged.ability_power.flat + merged.ability_power.per_level * level * (0.7025 + 0.0175 * level),
         armor: merged.armor.flat + merged.armor.per_level * level * (0.7025 + 0.0175 * level),

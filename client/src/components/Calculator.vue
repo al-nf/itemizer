@@ -117,31 +117,34 @@ const onEnter = () => {
 
 const onSearch = async (name: string) => {
   if (name) {
-    try {
-      const idResponse = await fetch(`http://localhost:8080/getitemid/${name}`, {
-        method: 'GET',
-      })
+    if (addedItems.value.length < 6) {
+      try {
+        const idResponse = await fetch(`http://localhost:8080/getitemid/${name}`, {
+          method: 'GET',
+        })
 
-      const id = await idResponse.text();
+        const id = await idResponse.text();
 
-      const response = await fetch(`http://localhost:8080/additem/${id}`, {
-        method: 'POST',
-      })
-      if (!response.ok) {
-        throw new Error('Bad network response')
-      }
+        const response = await fetch(`http://localhost:8080/additem/${id}`, {
+          method: 'POST',
+        })
+        if (!response.ok) {
+          throw new Error('Bad network response')
+        }
 
-      const result = await response.text()
-      console.log('Response from server:', result)
+        const result = await response.text()
+        console.log('Response from server:', result)
 
-      if (addedItems.value.length < 6) {
         const itemToAdd = items.value.find((item) => item.name === name)
         if (itemToAdd) {
           addedItems.value.push(itemToAdd)
         }
+
+      } catch (error) {
+        console.error('Error:', error)
       }
-    } catch (error) {
-      console.error('Error:', error)
+    } else {
+      console.log('No space in inventory')
     }
     searchQuery.value = ''
     currentItem.value = null

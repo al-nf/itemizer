@@ -47,7 +47,7 @@ async fn main() -> std::io::Result<()> {
                     ])
                     .max_age(3600),
             )
-            .route("/updatecaches", web::put().to(update_caches))
+            .route("/updatecaches", web::post().to(update_caches))
             .route("/getchampion", web::get().to(champion::get_current_champion))
             .route("/champion", web::get().to(champion::fetch_champs))
             .route("/champion/{name}", web::get().to(champion::get_champion))
